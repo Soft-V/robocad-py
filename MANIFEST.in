@@ -1,2 +1,3 @@
-recursive-include shufflecad *.py
+recursive-include pycad *.py
+recursive-include robocadSim *.py
 include CHANGELOG.md LICENSE

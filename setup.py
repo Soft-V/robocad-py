@@ -9,16 +9,16 @@ classifiers = [
 ]
 
 setup(
-    name='shufflecad-py',
-    version='0.0.0.5',
-    description='python lib for shufflecad',
-    long_description="Python library for Shufflecad" + '\n\n' + open('CHANGELOG.md').read(),
-    url='https://github.com/Soft-V/shufflecad-4',
+    name='robocad-py',
+    version='0.0.0.1',
+    description='python lib for real and virtual robots',
+    long_description="Python library for real and virtual robots" + '\n\n' + open('CHANGELOG.md').read(),
+    url='https://github.com/CrackAndDie/robocad-py',
     author='Abdrakov Airat',
     author_email='abdrakovairat@gmail.com',
     license='MIT',
     classifiers=classifiers,
     keywords=['simulator', 'robotics', 'robot', '3d', 'raspberry', 'control'],
     packages=find_packages(),
-    install_requires=['numpy', 'funcad']
+    install_requires=['numpy', 'funcad', 'shufflecad-py']
 )
