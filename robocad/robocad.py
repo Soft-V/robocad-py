@@ -1,6 +1,9 @@
+import time
+
 import numpy as np
 import cv2
 import signal
+from threading import Thread
 
 from shufflecad.shufflecad import Shufflecad
 from shufflecad.shared import InfoHolder
@@ -59,18 +62,38 @@ class RobocadVMXTitan:
         signal.signal(signal.SIGINT, self.handler)
 
         if not self.is_real_robot:
-            from robocadSim.connection_helper import ConnectionHelper
+            from .robocadSim.connection_helper import ConnectionHelper
             self.__connection_helper = ConnectionHelper(ConnectionHelper.CONN_ALL)
             self.__connection_helper.start_channels()
+
+            InfoHolder.power = "12"  # :)
         else:
-            self.__camera_instance = cv2.VideoCapture(0)
+            try:
+                self.__camera_instance = cv2.VideoCapture(0)
+            except Exception as e:
+                InfoHolder.logger.write_main_log("Exception while creating camera instance: ")
+                InfoHolder.logger.write_main_log(str(e))
             # mb cringe
             global VMXStatic, TitanStatic
-            from pycad.shared import VMXStatic, TitanStatic
-            from pycad.SPI import VMXSPI
-            from pycad.COM import TitanCOM
+            from .pycad.shared import VMXStatic, TitanStatic
+            from .pycad.SPI import VMXSPI
+            from .pycad.COM import TitanCOM
             VMXSPI.start_spi()
             TitanCOM.start_com()
+            th: Thread = Thread(target=RobocadVMXTitan.__update_rpi_cringe)
+            th.daemon = True
+            th.start()
+
+    @classmethod
+    def __update_rpi_cringe(cls):
+        from gpiozero import CPUTemperature
+        import psutil
+        cpu_temp: CPUTemperature = CPUTemperature()
+        while True:
+            InfoHolder.temperature = str(cpu_temp.temperature)
+            InfoHolder.memory_load = str(psutil.virtual_memory().percent)
+            InfoHolder.cpu_load = str(psutil.cpu_percent(interval=0.5))
+            time.sleep(0.5)
 
     def stop(self):
         Shufflecad.stop()
@@ -252,12 +275,15 @@ class RobocadVMXTitan:
     def camera_image(self):
         if not self.is_real_robot:
             self.__update_camera()
-            return self.__camera_image
         else:
-            ret, frame = self.__camera_instance.read()
-            if ret:
-                self.__camera_image = frame
-            return self.__camera_image
+            try:
+                ret, frame = self.__camera_instance.read()
+                if ret:
+                    self.__camera_image = frame
+            except Exception:
+                # there could be an error if there is no camera instance
+                pass
+        return self.__camera_image
 
     # port is from 1 to 10 included
     def set_angle_hcdio(self, value: float, port: int):
