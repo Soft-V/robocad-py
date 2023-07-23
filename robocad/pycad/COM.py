@@ -11,11 +11,14 @@ from funcad.funcad import Funcad
 
 
 class TitanCOM:
+    th: Thread = None
+    stop_th: bool = False
+
     @classmethod
     def start_com(cls) -> None:
-        th: Thread = Thread(target=cls.com_loop)
-        th.daemon = True
-        th.start()
+        cls.th: Thread = Thread(target=cls.com_loop)
+        cls.th.daemon = True
+        cls.th.start()
 
     @classmethod
     def com_loop(cls) -> None:
@@ -31,7 +34,7 @@ class TitanCOM:
             start_time: int = round(time.time() * 10000)
             send_count_time: float = time.time()
             comm_counter = 0
-            while True:
+            while not cls.stop_th:
                 rx_data: bytearray = bytearray(ser.read(48))
                 ser.reset_input_buffer()  # reset buffer
                 rx_time: int = round(time.time() * 10000)

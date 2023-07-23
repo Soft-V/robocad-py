@@ -13,11 +13,14 @@ from funcad.funcad import Funcad
 class VMXSPI:
     toggler: int = 0
 
+    th: Thread = None
+    stop_th: bool = False
+
     @classmethod
     def start_spi(cls) -> None:
-        th: Thread = Thread(target=cls.spi_loop)
-        th.daemon = True
-        th.start()
+        cls.th: Thread = Thread(target=cls.spi_loop)
+        cls.th.daemon = True
+        cls.th.start()
 
     @classmethod
     def spi_loop(cls) -> None:
@@ -30,7 +33,7 @@ class VMXSPI:
             start_time: float = time.time() * 1000
             send_count_time: float = time.time()
             comm_counter = 0
-            while True:
+            while not cls.stop_th:
                 tx_time: float = time.time() * 1000
                 tx_list = cls.set_up_tx_data()
                 InfoHolder.tx_spi_time_dev = str(round(time.time() * 1000 - tx_time, 2))

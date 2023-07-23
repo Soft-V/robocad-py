@@ -1,12 +1,14 @@
 import time
-
 import numpy as np
 import cv2
 import signal
 from threading import Thread
+import subprocess
 
 from shufflecad.shufflecad import Shufflecad
 from shufflecad.shared import InfoHolder
+
+from .robocadSim.connection_helper_vmx_titan import ConnectionHelperVMXTitan
 
 
 class RobocadVMXTitan:
@@ -62,8 +64,7 @@ class RobocadVMXTitan:
         signal.signal(signal.SIGINT, self.handler)
 
         if not self.is_real_robot:
-            from .robocadSim.connection_helper import ConnectionHelper
-            self.__connection_helper = ConnectionHelper(ConnectionHelper.CONN_ALL)
+            self.__connection_helper = ConnectionHelperVMXTitan()
             self.__connection_helper.start_channels()
 
             InfoHolder.power = "12"  # :)
@@ -74,22 +75,23 @@ class RobocadVMXTitan:
                 InfoHolder.logger.write_main_log("Exception while creating camera instance: ")
                 InfoHolder.logger.write_main_log(str(e))
             # mb cringe
-            global VMXStatic, TitanStatic
+            global VMXStatic, TitanStatic, VMXSPI, TitanCOM
             from .pycad.shared import VMXStatic, TitanStatic
             from .pycad.SPI import VMXSPI
             from .pycad.COM import TitanCOM
             VMXSPI.start_spi()
             TitanCOM.start_com()
-            th: Thread = Thread(target=RobocadVMXTitan.__update_rpi_cringe)
-            th.daemon = True
-            th.start()
+            subprocess.run(['sudo', '/home/pi/pi-blaster/pi-blaster'])
+            self.__stop_robot_info_thread = False
+            self.__robot_info_thread: Thread = Thread(target=self.__update_rpi_cringe)
+            self.__robot_info_thread.daemon = True
+            self.__robot_info_thread.start()
 
-    @classmethod
-    def __update_rpi_cringe(cls):
+    def __update_rpi_cringe(self):
         from gpiozero import CPUTemperature
         import psutil
         cpu_temp: CPUTemperature = CPUTemperature()
-        while True:
+        while not self.__stop_robot_info_thread:
             InfoHolder.temperature = str(cpu_temp.temperature)
             InfoHolder.memory_load = str(psutil.virtual_memory().percent)
             InfoHolder.cpu_load = str(psutil.cpu_percent(interval=0.5))
@@ -99,10 +101,17 @@ class RobocadVMXTitan:
         Shufflecad.stop()
         if not self.is_real_robot:
             self.__connection_helper.stop_channels()
+        else:
+            self.__stop_robot_info_thread = True
+            self.__robot_info_thread.join()
+            TitanCOM.stop_th = True
+            TitanCOM.th.join()
+            VMXSPI.stop_th = True
+            VMXSPI.th.join()
         InfoHolder.logger.write_main_log("Program stopped")
 
     def handler(self, signum, _):
-        InfoHolder.logger.write_main_log("Program stopped")
+        InfoHolder.logger.write_main_log("Program stopped from handler")
         InfoHolder.logger.write_main_log('Signal handler called with signal' + str(signum))
         self.stop()
         raise SystemExit("Exited")
@@ -115,7 +124,7 @@ class RobocadVMXTitan:
     def motor_speed_0(self, value):
         self.__motor_speed_0 = value
         if not self.is_real_robot:
-            self.__update_motors()
+            self.__update_set_data()
         else:
             TitanStatic.speed_motor_0 = value
 
@@ -127,7 +136,7 @@ class RobocadVMXTitan:
     def motor_speed_1(self, value):
         self.__motor_speed_1 = value
         if not self.is_real_robot:
-            self.__update_motors()
+            self.__update_set_data()
         else:
             TitanStatic.speed_motor_1 = value
 
@@ -139,7 +148,7 @@ class RobocadVMXTitan:
     def motor_speed_2(self, value):
         self.__motor_speed_2 = value
         if not self.is_real_robot:
-            self.__update_motors()
+            self.__update_set_data()
         else:
             TitanStatic.speed_motor_2 = value
 
@@ -151,7 +160,7 @@ class RobocadVMXTitan:
     def motor_speed_3(self, value):
         self.__motor_speed_3 = value
         if not self.is_real_robot:
-            self.__update_motors()
+            self.__update_set_data()
         else:
             TitanStatic.speed_motor_3 = value
 
@@ -290,7 +299,7 @@ class RobocadVMXTitan:
         if not self.is_real_robot:
             dut: float = 0.000666 * value + 0.05
             self.__hcdio_values[port - 1] = dut
-            self.__update_oms()
+            self.__update_set_data()
         else:
             VMXStatic.set_servo_angle(value, port - 1)
 
@@ -298,7 +307,7 @@ class RobocadVMXTitan:
     def set_pwm_hcdio(self, value: float, port: int):
         if not self.is_real_robot:
             self.__hcdio_values[port - 1] = value
-            self.__update_oms()
+            self.__update_set_data()
         else:
             VMXStatic.set_servo_pwm(value, port - 1)
 
@@ -307,74 +316,58 @@ class RobocadVMXTitan:
         if not self.is_real_robot:
             dut: float = 0.2 if value else 0.0
             self.__hcdio_values[port - 1] = dut
-            self.__update_oms()
+            self.__update_set_data()
         else:
             VMXStatic.set_led_state(value, port - 1)
 
     # for virtual robot
-    def __update_other(self):
-        self.__connection_helper.set_other(
-                (
-                    0, 0, 0,  # there is no other now
-                ))
-
-    def __update_motors(self):
-        self.__connection_helper.set_motors(
-            (
-                self.__motor_speed_0,
-                self.__motor_speed_1,
-                self.__motor_speed_2,
-                self.__motor_speed_3,
-            ))
-
-    def __update_oms(self):
-        self.__connection_helper.set_oms(tuple(self.__hcdio_values))
-
-    def __update_resets(self):
-        self.__connection_helper.set_resets(
-            (
-                0, 0, 0  # there are no resets now
-            ))
+    def __update_set_data(self):
+        values = [self.__motor_speed_0,
+                  self.__motor_speed_1,
+                  self.__motor_speed_2,
+                  self.__motor_speed_3]
+        values.extend(self.__hcdio_values)
+        self.__connection_helper.set_data(tuple(values))
 
     def __update_encs(self):
-        values = self.__connection_helper.get_encs()
-        if len(values) == 4:
+        values = self.__connection_helper.get_data()
+        if len(values) == ConnectionHelperVMXTitan.MAX_DATA_RECEIVE:
             self.__motor_enc_0 = values[0]
             self.__motor_enc_1 = values[1]
             self.__motor_enc_2 = values[2]
             self.__motor_enc_3 = values[3]
 
     def __update_sensors(self):
-        values = self.__connection_helper.get_sens()
-        if len(values) == 7:
-            self.__ultrasound_1 = values[0]
-            self.__ultrasound_2 = values[1]
-            self.__analog_1 = values[2]
-            self.__analog_2 = values[3]
-            self.__analog_3 = values[4]
-            self.__analog_4 = values[5]
-            self.__yaw = values[6]
+        values = self.__connection_helper.get_data()
+        if len(values) == ConnectionHelperVMXTitan.MAX_DATA_RECEIVE:
+            self.__ultrasound_1 = values[4]
+            self.__ultrasound_2 = values[5]
+            self.__analog_1 = values[6]
+            self.__analog_2 = values[7]
+            self.__analog_3 = values[8]
+            self.__analog_4 = values[9]
+            self.__yaw = values[10]
 
     def __update_buttons(self):
-        values = self.__connection_helper.get_buttons()
-        if len(values) == 16:
-            self.__limit_h_0 = values[0]
-            self.__limit_l_0 = values[1]
-            self.__limit_h_1 = values[2]
-            self.__limit_l_1 = values[3]
-            self.__limit_h_2 = values[4]
-            self.__limit_l_2 = values[5]
-            self.__limit_h_3 = values[6]
-            self.__limit_l_3 = values[7]
+        values = self.__connection_helper.get_data()
+        if len(values) == ConnectionHelperVMXTitan.MAX_DATA_RECEIVE:
+            self.__limit_h_0 = values[11]
+            self.__limit_l_0 = values[12]
+            self.__limit_h_1 = values[13]
+            self.__limit_l_1 = values[14]
+            self.__limit_h_2 = values[15]
+            self.__limit_l_2 = values[16]
+            self.__limit_h_3 = values[17]
+            self.__limit_l_3 = values[18]
 
-            self.__flex_0 = values[8]
-            self.__flex_1 = values[9]
-            self.__flex_2 = values[10]
-            self.__flex_3 = values[11]
-            self.__flex_4 = values[12]
-            self.__flex_5 = values[13]
-            self.__flex_6 = values[14]
-            self.__flex_7 = values[15]
+            self.__flex_0 = values[19]
+            self.__flex_1 = values[20]
+            self.__flex_2 = values[21]
+            self.__flex_3 = values[22]
+            self.__flex_4 = values[23]
+            self.__flex_5 = values[24]
+            self.__flex_6 = values[25]
+            self.__flex_7 = values[26]
 
     def __update_camera(self):
         # because of 640x480
