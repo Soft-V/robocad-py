@@ -82,8 +82,6 @@ class TitanCOM:
                     TitanStatic.limit_h_2 = Funcad.access_bit(data[9], 6)
                     TitanStatic.limit_l_3 = Funcad.access_bit(data[10], 1)
                     TitanStatic.limit_h_3 = Funcad.access_bit(data[10], 2)
-                    # достигнута ли позиция лифта
-                    TitanStatic.lift_pos_reached = Funcad.access_bit(data[10], 6)
 
         else:
             InfoHolder.logger.write_main_log("received wrong data " + " ".join(map(str, data)))
@@ -92,9 +90,6 @@ class TitanCOM:
     def set_up_tx_data() -> bytearray:
         tx_data: bytearray = bytearray([0] * 48)
         tx_data[0] = 1
-
-        # this cringe was for leds
-        tx_data[1] = int('1' + '0000001', 2)
 
         motor_speeds: bytearray = Funcad.int_to_4_bytes(abs(int(TitanStatic.speed_motor_0 / 100 * 65535)))
         tx_data[2] = motor_speeds[2]
@@ -117,13 +112,10 @@ class TitanCOM:
                           ("1" if TitanStatic.speed_motor_2 >= 0 else "0") +
                           ("1" if TitanStatic.speed_motor_3 >= 0 else "0") + '001', 2)
 
-        # cringe fuck this shite
+        # third bit is for ProgramIsRunning
         tx_data[11] = int('1' + '0100001', 2)
 
         tx_data[20] = 222
-
-        # if TitanStatic.speed_motor_0 > 0:
-        #     Logger.write_com_log("received wrong data " + " ".join(map(str, tx_data)))
 
         return tx_data
 
