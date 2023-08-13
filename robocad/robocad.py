@@ -5,8 +5,8 @@ import signal
 from threading import Thread
 import subprocess
 
-from shufflecad.shufflecad import Shufflecad
-from shufflecad.shared import InfoHolder
+from .shufflecad.shufflecad import Shufflecad
+from .shufflecad.shared import InfoHolder
 
 from .robocadSim.connection_helper_vmx_titan import ConnectionHelperVMXTitan
 

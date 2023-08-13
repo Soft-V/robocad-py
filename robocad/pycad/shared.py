@@ -1,4 +1,52 @@
 import sys
+import ctypes
+
+
+class LibHolder:
+    lib = None
+
+    @classmethod
+    def init(cls):
+        if cls.lib is None:
+            cls.lib = ctypes.cdll.LoadLibrary('/home/pi/CommonRPiLibrary/CommonRPiLibrary/build/libCommonRPiLibrary.so')
+
+    @classmethod
+    def init_spi(cls):
+        if cls.lib is not None:
+            cls.lib.StartSPI()
+            cls.lib.ReadWriteSPI.argtypes = [ctypes.POINTER(ctypes.c_ubyte), ctypes.c_uint]
+            cls.lib.ReadWriteSPI.restype = ctypes.POINTER(ctypes.c_ubyte)
+
+    @classmethod
+    def init_usb(cls):
+        if cls.lib is not None:
+            cls.lib.StartUSB()
+            cls.lib.ReadWriteUSB.argtypes = [ctypes.POINTER(ctypes.c_ubyte), ctypes.c_uint]
+            cls.lib.ReadWriteUSB.restype = ctypes.POINTER(ctypes.c_ubyte)
+
+    @classmethod
+    def rw_spi(cls, array: bytearray) -> bytearray:
+        data_array = (ctypes.c_ubyte * len(array))(*array)
+        data_length = len(array)
+        returned_array_ptr = cls.lib.ReadWriteSPI(data_array, data_length)
+        return bytearray([returned_array_ptr[i] for i in range(data_length)])
+
+    @classmethod
+    def rw_usb(cls, array: bytearray) -> bytearray:
+        data_array = (ctypes.c_ubyte * len(array))(*array)
+        data_length = len(array)
+        returned_array_ptr = cls.lib.ReadWriteUSB(data_array, data_length)
+        return bytearray([returned_array_ptr[i] for i in range(data_length)])
+
+    @classmethod
+    def stop_spi(cls):
+        if cls.lib is not None:
+            cls.lib.StopSPI()
+
+    @classmethod
+    def stop_usb(cls):
+        if cls.lib is not None:
+            cls.lib.StopUSB()
 
 
 class TitanStatic:

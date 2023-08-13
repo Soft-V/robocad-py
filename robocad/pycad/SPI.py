@@ -3,10 +3,9 @@ import sys
 import time
 from threading import Thread
 
-import spidev
-
-from shufflecad.shared import InfoHolder
+from robocad.shufflecad.shared import InfoHolder
 from .shared import VMXStatic
+from .shared import LibHolder
 from funcad.funcad import Funcad
 
 
@@ -25,10 +24,8 @@ class VMXSPI:
     @classmethod
     def spi_loop(cls) -> None:
         try:
-            spi = spidev.SpiDev()
-            spi.open(1, 2)
-            spi.max_speed_hz = 1000000
-            spi.mode = 0b00
+            LibHolder.init()
+            LibHolder.init_spi()
 
             start_time: float = time.time() * 1000
             send_count_time: float = time.time()
@@ -38,7 +35,7 @@ class VMXSPI:
                 tx_list = cls.set_up_tx_data()
                 InfoHolder.tx_spi_time_dev = str(round(time.time() * 1000 - tx_time, 2))
 
-                rx_list = spi.xfer(tx_list)
+                rx_list: bytearray = LibHolder.rw_spi(tx_list)
 
                 rx_time: float = time.time() * 1000
                 cls.set_up_rx_data(rx_list)
@@ -54,6 +51,7 @@ class VMXSPI:
                 InfoHolder.spi_time_dev = str(round(time.time() * 1000 - start_time, 2))
                 start_time = time.time() * 1000
         except (Exception, EOFError) as e:
+            LibHolder.stop_spi()
             exc_type, exc_obj, exc_tb = sys.exc_info()
             file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             InfoHolder.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))

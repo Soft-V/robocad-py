@@ -3,7 +3,7 @@ import threading
 import time
 import warnings
 
-from shufflecad.shared import InfoHolder
+from robocad.shufflecad.shared import InfoHolder
 
 
 class ListenPort:

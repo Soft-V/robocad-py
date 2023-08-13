@@ -3,10 +3,9 @@ import sys
 import time
 from threading import Thread
 
-import serial
-
-from shufflecad.shared import InfoHolder
+from robocad.shufflecad.shared import InfoHolder
 from .shared import TitanStatic
+from .shared import LibHolder
 from funcad.funcad import Funcad
 
 
@@ -23,30 +22,22 @@ class TitanCOM:
     @classmethod
     def com_loop(cls) -> None:
         try:
-            ser = serial.Serial(
-                port='/dev/ttyACM0',
-                baudrate=115200,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE,
-                bytesize=serial.EIGHTBITS
-            )
+            LibHolder.init()
+            LibHolder.init_usb()
 
             start_time: int = round(time.time() * 10000)
             send_count_time: float = time.time()
             comm_counter = 0
             while not cls.stop_th:
-                rx_data: bytearray = bytearray(ser.read(48))
-                ser.reset_input_buffer()  # reset buffer
-                rx_time: int = round(time.time() * 10000)
-                TitanCOM.set_up_rx_data(rx_data)
-                InfoHolder.rx_com_time_dev = str(round(time.time() * 10000) - rx_time)
+                tx_time: float = time.time() * 1000
+                tx_data = cls.set_up_tx_data()
+                InfoHolder.tx_com_time_dev = str(round(time.time() * 1000 - tx_time, 2))
 
-                tx_time: int = round(time.time() * 10000)
-                tx_data = TitanCOM.set_up_tx_data()
-                InfoHolder.tx_com_time_dev = str(round(time.time() * 10000) - tx_time)
-                ser.reset_output_buffer()  # reset buffer
-                ser.write(tx_data)
-                ser.flush()
+                rx_data: bytearray = LibHolder.rw_usb(tx_data)
+
+                rx_time: float = time.time() * 1000
+                cls.set_up_rx_data(rx_data)
+                InfoHolder.rx_com_time_dev = str(round(time.time() * 1000 - rx_time, 2))
 
                 comm_counter += 1
                 if time.time() - send_count_time > 1:
@@ -57,7 +48,8 @@ class TitanCOM:
                 time.sleep(0.001)
                 InfoHolder.com_time_dev = str(round(time.time() * 10000) - start_time)
                 start_time = round(time.time() * 10000)
-        except (Exception, serial.SerialException) as e:
+        except Exception as e:
+            LibHolder.stop_usb()
             exc_type, exc_obj, exc_tb = sys.exc_info()
             file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             InfoHolder.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
