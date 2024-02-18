@@ -16,6 +16,7 @@ class Logger:
         file_handler.setFormatter(logging.Formatter(self.FORMAT))
         self.main_logger = logging.getLogger("main_logger")
         self.main_logger.addHandler(file_handler)
+        self.main_logger.setLevel(logging.WARNING)
 
     def write_main_log(self, s: str):
         self.main_logger.info(datetime.now().strftime("%H:%M:%S") + " " + s)
