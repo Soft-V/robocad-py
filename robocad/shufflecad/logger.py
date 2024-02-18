@@ -10,7 +10,7 @@ class Logger:
         logging.basicConfig(level=logging.DEBUG,
                             format=self.FORMAT)
         if InfoHolder.on_real_robot:
-            file_handler = logging.FileHandler('/home/pi/loggercad/cad_main.log')
+            file_handler = logging.FileHandler('/home/pi/robocad/logs/cad_main.log')
         else:
             file_handler = logging.FileHandler('./cad_main.log')
         file_handler.setFormatter(logging.Formatter(self.FORMAT))
