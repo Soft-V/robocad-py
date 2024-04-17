@@ -133,12 +133,12 @@ class TalkPort:
 class ParseChannels:
     @staticmethod
     def join_studica_channel(lst: tuple) -> bytes:
-        if len(lst) != 14:
+        if len(lst) < 14:
             return b''
         return struct.pack('14f', *lst)
     
     @staticmethod
     def parse_studica_channel(data: bytes) -> tuple:
-        if len(data) != 52:
+        if len(data) < 52:
             return tuple()
         return struct.unpack('<4I2f4Hf16B', data)
