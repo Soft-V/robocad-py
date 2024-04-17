@@ -11,7 +11,7 @@ from .shufflecad.shared import InfoHolder
 from .robocadSim.connection_helper_vmx_titan import ConnectionHelperVMXTitan
 
 
-class RobocadVMXTitan:
+class RobotVmxTitan:
     def __init__(self, is_real_robot: bool = True):
         self.__motor_speed_0 = 0.0
         self.__motor_speed_1 = 0.0
@@ -52,7 +52,7 @@ class RobocadVMXTitan:
         self.__flex_6 = False
         self.__flex_7 = False
 
-        self.__hcdio_values: list = [0] * 10
+        self.__hcdio_values: list[float] = [0.0] * 10
 
         self.__camera_image = None
 
@@ -67,7 +67,7 @@ class RobocadVMXTitan:
             self.__connection_helper = ConnectionHelperVMXTitan()
             self.__connection_helper.start_channels()
 
-            InfoHolder.power = "12"  # :)
+            InfoHolder.power = "12"  # todo: control from sim
         else:
             try:
                 self.__camera_instance = cv2.VideoCapture(0)
@@ -88,8 +88,8 @@ class RobocadVMXTitan:
             self.__robot_info_thread.start()
 
     def __update_rpi_cringe(self):
-        from gpiozero import CPUTemperature
-        import psutil
+        from gpiozero import CPUTemperature # type: ignore
+        import psutil # type: ignore
         cpu_temp: CPUTemperature = CPUTemperature()
         while not self.__stop_robot_info_thread:
             InfoHolder.temperature = str(cpu_temp.temperature)
@@ -351,23 +351,23 @@ class RobocadVMXTitan:
     def __update_buttons(self):
         values = self.__connection_helper.get_data()
         if len(values) == ConnectionHelperVMXTitan.MAX_DATA_RECEIVE:
-            self.__limit_h_0 = values[11]
-            self.__limit_l_0 = values[12]
-            self.__limit_h_1 = values[13]
-            self.__limit_l_1 = values[14]
-            self.__limit_h_2 = values[15]
-            self.__limit_l_2 = values[16]
-            self.__limit_h_3 = values[17]
-            self.__limit_l_3 = values[18]
+            self.__limit_h_0 = values[11] == 1
+            self.__limit_l_0 = values[12] == 1
+            self.__limit_h_1 = values[13] == 1
+            self.__limit_l_1 = values[14] == 1
+            self.__limit_h_2 = values[15] == 1
+            self.__limit_l_2 = values[16] == 1
+            self.__limit_h_3 = values[17] == 1
+            self.__limit_l_3 = values[18] == 1
 
-            self.__flex_0 = values[19]
-            self.__flex_1 = values[20]
-            self.__flex_2 = values[21]
-            self.__flex_3 = values[22]
-            self.__flex_4 = values[23]
-            self.__flex_5 = values[24]
-            self.__flex_6 = values[25]
-            self.__flex_7 = values[26]
+            self.__flex_0 = values[19] == 1
+            self.__flex_1 = values[20] == 1
+            self.__flex_2 = values[21] == 1
+            self.__flex_3 = values[22] == 1
+            self.__flex_4 = values[23] == 1
+            self.__flex_5 = values[24] == 1
+            self.__flex_6 = values[25] == 1
+            self.__flex_7 = values[26] == 1
 
     def __update_camera(self):
         # because of 640x480

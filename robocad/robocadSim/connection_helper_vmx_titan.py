@@ -12,7 +12,7 @@ class ConnectionHelperVMXTitan:
     def __init__(self) -> None:
         self.__talk_channel = TalkPort(self.__port_set_data)
         self.__listen_channel = ListenPort(self.__port_get_data)
-        self.__camera_channel = ListenPort(self.__port_camera, True)
+        self.__camera_channel = ListenPort(self.__port_camera)
 
     def start_channels(self) -> None:
         self.__talk_channel.start_talking()
@@ -25,10 +25,10 @@ class ConnectionHelperVMXTitan:
         self.__camera_channel.stop_listening()
 
     def set_data(self, values: tuple) -> None:
-        self.__talk_channel.out_string = ParseChannels.join_float_channel(values)
+        self.__talk_channel.out_bytes = ParseChannels.join_studica_channel(values)
 
     def get_data(self) -> tuple:
-        return ParseChannels.parse_float_channel(self.__listen_channel.out_string)
+        return ParseChannels.parse_studica_channel(self.__listen_channel.out_bytes)
 
     def get_camera(self) -> bytes:
         return self.__camera_channel.out_bytes
