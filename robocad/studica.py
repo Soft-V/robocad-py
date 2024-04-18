@@ -7,6 +7,7 @@ import subprocess
 
 from .shufflecad.shufflecad import Shufflecad
 from .shufflecad.shared import InfoHolder
+from .shufflecad.logger import Logger
 
 from .robocadSim.connection_helper_vmx_titan import ConnectionHelperVMXTitan
 
@@ -58,7 +59,7 @@ class RobotVmxTitan:
 
         self.is_real_robot = is_real_robot
         InfoHolder.on_real_robot = is_real_robot
-        Shufflecad.start()
+        InfoHolder.logger = Logger()
 
         signal.signal(signal.SIGTERM, self.handler)
         signal.signal(signal.SIGINT, self.handler)
@@ -98,7 +99,6 @@ class RobotVmxTitan:
             time.sleep(0.5)
 
     def stop(self):
-        Shufflecad.stop()
         if not self.is_real_robot:
             self.__connection_helper.stop_channels()
         else:

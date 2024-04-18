@@ -7,7 +7,6 @@ import signal
 class Shufflecad:
     @classmethod
     def start(cls):
-        InfoHolder.logger = Logger()
         signal.signal(signal.SIGTERM, cls.handler)
         signal.signal(signal.SIGINT, cls.handler)
         ConnectionHelper.init_and_start()

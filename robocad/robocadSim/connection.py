@@ -28,7 +28,11 @@ class ListenPort:
         InfoHolder.logger.write_main_log("connected: " + str(self.__port))
         while not self.__stop_thread:
             try:
-                self.__sct.sendall("Wait for data".encode('utf-16-le'))
+                dt = "Wait for data".encode('utf-16-le')
+                dt_ln = struct.pack('<I', len(dt))
+                self.__sct.sendall(dt_ln)
+                self.__sct.sendall(dt)
+
                 data_size = self.__sct.recv(4)
                 if len(data_size) < 4:
                     continue
@@ -37,12 +41,14 @@ class ListenPort:
                 self.out_bytes = self.__sct.recv(length)
                 # задержка для слабых компов
                 time.sleep(0.004)
-            except (ConnectionAbortedError, BrokenPipeError):
+            except (ConnectionAbortedError, BrokenPipeError, OSError):
                 # возникает при отключении сокета
                 break
         InfoHolder.logger.write_main_log("disconnected: " + str(self.__port))
-        self.__sct.shutdown(socket.SHUT_RDWR)
-        self.__sct.close()
+        try:
+            self.__sct.shutdown(socket.SHUT_RDWR)
+            self.__sct.close()
+        except (OSError, Exception): pass  # idc
 
     def reset_out(self):
         self.out_bytes = b''
@@ -92,19 +98,24 @@ class TalkPort:
         InfoHolder.logger.write_main_log("connected: " + str(self.__port))
         while not self.__stop_thread:
             try:
+                dt_ln = struct.pack('<I', len(self.out_bytes))
+                self.__sct.sendall(dt_ln)
                 self.__sct.sendall(self.out_bytes)
+                _ = self.__sct.recv(4)  # ответ сервера
                 _ = self.__sct.recv(4)  # ответ сервера
                 # задержка для слабых компов
                 time.sleep(0.004)
-            except (ConnectionAbortedError, BrokenPipeError):
+            except (ConnectionAbortedError, BrokenPipeError, OSError):
                 # возникает при отключении сокета
                 break
         InfoHolder.logger.write_main_log("disconnected: " + str(self.__port))
-        self.__sct.shutdown(socket.SHUT_RDWR)
-        self.__sct.close()
+        try:
+            self.__sct.shutdown(socket.SHUT_RDWR)
+            self.__sct.close()
+        except (OSError, Exception): pass  # idc
 
     def reset_out(self):
-        self.out_bytes = ''
+        self.out_bytes = b''
 
     def stop_talking(self):
         self.__stop_thread = True
