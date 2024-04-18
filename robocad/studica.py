@@ -9,7 +9,7 @@ from .shufflecad.shufflecad import Shufflecad
 from .shufflecad.shared import InfoHolder
 from .shufflecad.logger import Logger
 
-from .robocadSim.connection_helper_vmx_titan import ConnectionHelperVMXTitan
+from .robocadSim.studica.connection_helper import ConnectionHelper
 
 
 class RobotVmxTitan:
@@ -34,7 +34,7 @@ class RobotVmxTitan:
         self.__limit_h_3 = False
 
         self.__yaw = 0.0
-        # self.__yaw_unlim = 0.0
+        self.__reseted_yaw_val = 0.0
 
         self.__ultrasound_1 = 0.0
         self.__ultrasound_2 = 0.0
@@ -65,8 +65,7 @@ class RobotVmxTitan:
         signal.signal(signal.SIGINT, self.handler)
 
         if not self.is_real_robot:
-            self.__connection_helper = ConnectionHelperVMXTitan()
-            self.__connection_helper.start_channels()
+            ConnectionHelper.start_channels()
 
             InfoHolder.power = "12"  # todo: control from sim
         else:
@@ -77,9 +76,9 @@ class RobotVmxTitan:
                 InfoHolder.logger.write_main_log(str(e))
             # mb cringe
             global VMXStatic, TitanStatic, VMXSPI, TitanCOM
-            from .pycad.shared import VMXStatic, TitanStatic
-            from .pycad.SPI import VMXSPI
-            from .pycad.COM import TitanCOM
+            from .pycad.studica.shared import VMXStatic, TitanStatic
+            from .pycad.studica.SPI import VMXSPI
+            from .pycad.studica.COM import TitanCOM
             VMXSPI.start_spi()
             TitanCOM.start_com()
             subprocess.run(['sudo', '/home/pi/pi-blaster/pi-blaster'])
@@ -100,7 +99,7 @@ class RobotVmxTitan:
 
     def stop(self):
         if not self.is_real_robot:
-            self.__connection_helper.stop_channels()
+            ConnectionHelper.stop_channels()
         else:
             self.__stop_robot_info_thread = True
             self.__robot_info_thread.join()
@@ -198,6 +197,12 @@ class RobotVmxTitan:
 
     @property
     def yaw(self):
+        return self.__normalize_angle(self.__get_pure_yaw() - self.__reseted_yaw_val)
+    
+    def reset_yaw(self, value: float = 0.0):
+        self.__reseted_yaw_val = self.__normalize_angle(self.__get_pure_yaw() - value)
+        
+    def __get_pure_yaw(self):
         if not self.is_real_robot:
             self.__update_sensors()
             return self.__yaw
@@ -371,10 +376,17 @@ class RobotVmxTitan:
 
     def __update_camera(self):
         # because of 640x480
-        camera_data = self.__connection_helper.get_camera()
+        camera_data = ConnectionHelper.get_camera()
         if len(camera_data) == 921600:
             nparr = np.frombuffer(camera_data, np.uint8)
             if nparr.size > 0:
                 img_rgb = nparr.reshape(480, 640, 3)
                 img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
                 self.__camera_image = img_bgr
+
+    def __normalize_angle(self, angle: float) -> float:
+        if angle < -180:
+            return angle + 360
+        elif angle > 180:
+            return angle - 360
+        return angle
