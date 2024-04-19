@@ -3,7 +3,7 @@ import sys
 import time
 from threading import Thread
 
-from robocad.shufflecad.shared import InfoHolder
+from robocad.common import Common
 from .shared import VMXStatic
 from .shared import LibHolder
 from funcad.funcad import Funcad
@@ -33,29 +33,29 @@ class VMXSPI:
             while not cls.stop_th:
                 tx_time: float = time.time() * 1000
                 tx_list = cls.set_up_tx_data()
-                InfoHolder.tx_spi_time_dev = str(round(time.time() * 1000 - tx_time, 2))
+                Common.tx_spi_time_dev = round(time.time() * 1000 - tx_time, 2)
 
                 rx_list: bytearray = LibHolder.rw_spi(tx_list)
 
                 rx_time: float = time.time() * 1000
                 cls.set_up_rx_data(rx_list)
-                InfoHolder.rx_spi_time_dev = str(round(time.time() * 1000 - rx_time, 2))
+                Common.rx_spi_time_dev = round(time.time() * 1000 - rx_time, 2)
 
                 comm_counter += 1
                 if time.time() - send_count_time > 1:
                     send_count_time = time.time()
-                    InfoHolder.spi_count_dev = str(comm_counter)
+                    Common.spi_count_dev = comm_counter
                     comm_counter = 0
 
                 time.sleep(0.002)
-                InfoHolder.spi_time_dev = str(round(time.time() * 1000 - start_time, 2))
+                Common.spi_time_dev = round(time.time() * 1000 - start_time, 2)
                 start_time = time.time() * 1000
         except (Exception, EOFError) as e:
             LibHolder.stop_spi()
             exc_type, exc_obj, exc_tb = sys.exc_info()
             file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            InfoHolder.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
-            InfoHolder.logger.write_main_log(str(e))
+            Common.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
+            Common.logger.write_main_log(str(e))
 
     @classmethod
     def set_up_rx_data(cls, data: bytearray) -> None:
@@ -67,7 +67,7 @@ class VMXSPI:
             VMXStatic.ultrasound_2 = us2_ui / 100
 
             power: float = ((data[8] & 0xff) << 8 | (data[7] & 0xff)) / 100
-            InfoHolder.power = str(power)
+            Common.power = power
 
             # calc yaw unlim
             new_yaw = (yaw_ui / 100) * (1 if Funcad.access_bit(data[9], 1) else -1)

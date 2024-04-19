@@ -4,7 +4,7 @@ import time
 import warnings
 import struct
 
-from robocad.shufflecad.shared import InfoHolder
+from robocad.common import Common
 
 
 class ListenPort:
@@ -25,7 +25,7 @@ class ListenPort:
     def listening(self):
         self.__sct = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
         self.__sct.connect(('127.0.0.1', self.__port))
-        InfoHolder.logger.write_main_log("connected: " + str(self.__port))
+        Common.logger.write_main_log("connected: " + str(self.__port))
         while not self.__stop_thread:
             try:
                 dt = "Wait for data".encode('utf-16-le')
@@ -44,7 +44,7 @@ class ListenPort:
             except (ConnectionAbortedError, BrokenPipeError, OSError):
                 # возникает при отключении сокета
                 break
-        InfoHolder.logger.write_main_log("disconnected: " + str(self.__port))
+        Common.logger.write_main_log("disconnected: " + str(self.__port))
         try:
             self.__sct.shutdown(socket.SHUT_RDWR)
             self.__sct.close()
@@ -60,19 +60,19 @@ class ListenPort:
             try:
                 self.__sct.shutdown(socket.SHUT_RDWR)
             except (OSError, Exception):
-                InfoHolder.logger.write_main_log("Something went wrong while shutting down socket on port " +
+                Common.logger.write_main_log("Something went wrong while shutting down socket on port " +
                                                  str(self.__port))
             if self.__thread is not None:
                 st_time = time.time()
                 # если поток все еще живой, ждем 1 секунды и закрываем сокет
                 while self.__thread.is_alive():
                     if time.time() - st_time > 1:
-                        InfoHolder.logger.write_main_log("Something went wrong. Rude disconnection on port " +
+                        Common.logger.write_main_log("Something went wrong. Rude disconnection on port " +
                                                          str(self.__port))
                         try:
                             self.__sct.close()
                         except (OSError, Exception):
-                            InfoHolder.logger.write_main_log("Something went wrong while closing socket on port " +
+                            Common.logger.write_main_log("Something went wrong while closing socket on port " +
                                                              str(self.__port))
                         st_time = time.time()
 
@@ -95,7 +95,7 @@ class TalkPort:
     def talking(self):
         self.__sct = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
         self.__sct.connect(('127.0.0.1', self.__port))
-        InfoHolder.logger.write_main_log("connected: " + str(self.__port))
+        Common.logger.write_main_log("connected: " + str(self.__port))
         while not self.__stop_thread:
             try:
                 dt_ln = struct.pack('<I', len(self.out_bytes))
@@ -108,7 +108,7 @@ class TalkPort:
             except (ConnectionAbortedError, BrokenPipeError, OSError):
                 # возникает при отключении сокета
                 break
-        InfoHolder.logger.write_main_log("disconnected: " + str(self.__port))
+        Common.logger.write_main_log("disconnected: " + str(self.__port))
         try:
             self.__sct.shutdown(socket.SHUT_RDWR)
             self.__sct.close()
@@ -124,19 +124,19 @@ class TalkPort:
             try:
                 self.__sct.shutdown(socket.SHUT_RDWR)
             except (OSError, Exception):
-                InfoHolder.logger.write_main_log("Something went wrong while shutting down socket on port " +
+                Common.logger.write_main_log("Something went wrong while shutting down socket on port " +
                                                  str(self.__port))
             if self.__thread is not None:
                 st_time = time.time()
                 # если поток все еще живой, ждем 1 секунды и закрываем сокет
                 while self.__thread.is_alive():
                     if time.time() - st_time > 1:
-                        InfoHolder.logger.write_main_log("Something went wrong. Rude disconnection on port " +
+                        Common.logger.write_main_log("Something went wrong. Rude disconnection on port " +
                                                          str(self.__port))
                         try:
                             self.__sct.close()
                         except (OSError, Exception):
-                            InfoHolder.logger.write_main_log("Something went wrong while closing socket on port " +
+                            Common.logger.write_main_log("Something went wrong while closing socket on port " +
                                                              str(self.__port))
                         st_time = time.time()
 

@@ -1,14 +1,18 @@
-from .shared import InfoHolder, CameraVariable
-from .logger import Logger
+from typing import List
+
+import cv2
+import numpy as np
 from .connections import ConnectionHelper
+from .shufflecad_holder import CameraVariable, ShufflecadHolder
+from robocad.common import Common
 import signal
 
 
 class Shufflecad:
     @classmethod
     def start(cls):
-        signal.signal(signal.SIGTERM, cls.handler)
-        signal.signal(signal.SIGINT, cls.handler)
+        signal.signal(signal.SIGTERM, cls.__handler)
+        signal.signal(signal.SIGINT, cls.__handler)
         ConnectionHelper.init_and_start()
 
     @classmethod
@@ -18,14 +22,19 @@ class Shufflecad:
     @classmethod
     def add_var(cls, var):
         if type(var) == CameraVariable:
-            InfoHolder.camera_variables_array.append(var)
+            ShufflecadHolder.camera_variables_array.append(var)
         else:
-            InfoHolder.variables_array.append(var)
+            ShufflecadHolder.variables_array.append(var)
         return var
+    
+    # outcad methods
+    @classmethod
+    def print_to_log(cls, var: str, color: str = "#e0d4ab") -> None:
+        ShufflecadHolder.print_to_log(var + color)
 
     @classmethod
-    def handler(cls, signum, _):
-        InfoHolder.logger.write_main_log("Program stopped")
-        InfoHolder.logger.write_main_log('Signal handler called with signal' + str(signum))
+    def __handler(cls, signum, _):
+        Common.logger.write_main_log("Program stopped")
+        Common.logger.write_main_log('Signal handler called with signal' + str(signum))
         ConnectionHelper.stop()
         raise SystemExit("Exited")

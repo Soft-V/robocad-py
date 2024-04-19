@@ -1,4 +1,6 @@
+
 from typing import List
+
 import cv2
 import numpy as np
 
@@ -58,27 +60,7 @@ class CameraVariable(object):
             self.value = mat
 
 
-class InfoHolder:
-    # logger object
-    logger = None
-    # control the type of the shufflecad work
-    on_real_robot: bool = True
-
-    power: str = "0"
-
-    # some things
-    spi_time_dev: str = "0"
-    rx_spi_time_dev: str = "0"
-    tx_spi_time_dev: str = "0"
-    spi_count_dev: str = "0"
-    com_time_dev: str = "0"
-    rx_com_time_dev: str = "0"
-    tx_com_time_dev: str = "0"
-    com_count_dev: str = "0"
-    temperature: str = "0"
-    memory_load: str = "0"
-    cpu_load: str = "0"
-
+class ShufflecadHolder:
     variables_array: List[ShuffleVariable] = list()
     camera_variables_array: List[CameraVariable] = list()
     joystick_values: dict = dict()
@@ -86,13 +68,13 @@ class InfoHolder:
 
     # outcad methods
     @classmethod
-    def print_to_log(cls, var: str, color: str = "#e0d4ab") -> None:
-        cls.print_array.append(var + color)
+    def print_to_log(cls, var: str) -> None:
+        ShufflecadHolder.print_array.append(var)
 
     @classmethod
     def get_print_array(cls) -> List[str]:
-        return cls.print_array
+        return ShufflecadHolder.print_array
 
     @classmethod
     def clear_print_array(cls) -> None:
-        cls.print_array = list()
+        ShufflecadHolder.print_array = list()

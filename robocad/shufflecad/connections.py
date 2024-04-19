@@ -6,8 +6,8 @@ import struct
 import time
 from threading import Thread
 
-from .shared import ShuffleVariable, InfoHolder
-
+from robocad.common import Common
+from .shufflecad_holder import CameraVariable, ShufflecadHolder, ShuffleVariable
 
 class ListenPort:
     def __init__(self, port: int, event_handler=None, delay: float = 0.004):
@@ -53,8 +53,8 @@ class ListenPort:
                 # возникает при отключении сокета
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                InfoHolder.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
-                InfoHolder.logger.write_main_log(str(e))
+                Common.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
+                Common.logger.write_main_log(str(e))
                 break
         self.__sct.shutdown(socket.SHUT_RDWR)
         self.__sct.close()
@@ -72,8 +72,8 @@ class ListenPort:
             except (OSError, Exception) as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                InfoHolder.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
-                InfoHolder.logger.write_main_log(str(e))
+                Common.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
+                Common.logger.write_main_log(str(e))
             if self.__thread is not None:
                 st_time = time.time()
                 # если поток все еще живой, ждем и закрываем сокет
@@ -84,9 +84,9 @@ class ListenPort:
                         except (OSError, Exception) as e:
                             exc_type, exc_obj, exc_tb = sys.exc_info()
                             file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                            InfoHolder.logger.write_main_log(" ".join(map(str,
+                            Common.logger.write_main_log(" ".join(map(str,
                                                                           [exc_type, file_name, exc_tb.tb_lineno])))
-                            InfoHolder.logger.write_main_log(str(e))
+                            Common.logger.write_main_log(str(e))
                         st_time = time.time()
 
 
@@ -144,8 +144,8 @@ class TalkPort:
                 # возникает при отключении сокета
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                InfoHolder.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
-                InfoHolder.logger.write_main_log(str(e))
+                Common.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
+                Common.logger.write_main_log(str(e))
                 break
         self.__sct.shutdown(socket.SHUT_RDWR)
         self.__sct.close()
@@ -163,8 +163,8 @@ class TalkPort:
             except (OSError, Exception) as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                InfoHolder.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
-                InfoHolder.logger.write_main_log(str(e))
+                Common.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
+                Common.logger.write_main_log(str(e))
             if self.__thread is not None:
                 st_time = time.time()
                 # если поток все еще живой, ждем и закрываем сокет
@@ -175,9 +175,9 @@ class TalkPort:
                         except (OSError, Exception) as e:
                             exc_type, exc_obj, exc_tb = sys.exc_info()
                             file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                            InfoHolder.logger.write_main_log(" ".join(map(str,
+                            Common.logger.write_main_log(" ".join(map(str,
                                                                           [exc_type, file_name, exc_tb.tb_lineno])))
-                            InfoHolder.logger.write_main_log(str(e))
+                            Common.logger.write_main_log(str(e))
                         st_time = time.time()
 
 
@@ -234,7 +234,7 @@ class ConnectionHelper:
 
     @classmethod
     def on_out_vars(cls):
-        without_charts = [i for i in InfoHolder.variables_array if i.type_ != ShuffleVariable.CHART_TYPE]
+        without_charts = [i for i in ShufflecadHolder.variables_array if i.type_ != ShuffleVariable.CHART_TYPE]
         if len(without_charts) > 0:
             strings = ["{0};{1};{2};{3}".format(i.name, i.value, i.type_, i.direction) for i in without_charts]
             cls.out_variables_channel.out_string = "&".join(strings)
@@ -247,12 +247,12 @@ class ConnectionHelper:
             string_vars = cls.in_variables_channel.out_string.split("&")
             for i in string_vars:
                 name, value = i.split(";")
-                curr_var = [x for x in InfoHolder.variables_array if x.name == name][0]
+                curr_var = [x for x in ShufflecadHolder.variables_array if x.name == name][0]
                 curr_var.value = value
 
     @classmethod
     def on_chart_vars(cls):
-        only_charts = [i for i in InfoHolder.variables_array if i.type_ == ShuffleVariable.CHART_TYPE]
+        only_charts = [i for i in ShufflecadHolder.variables_array if i.type_ == ShuffleVariable.CHART_TYPE]
         if len(only_charts) > 0:
             strings = ["{0};{1}".format(i.name, i.value) for i in only_charts]
             cls.chart_variables_channel.out_string = "&".join(strings)
@@ -261,31 +261,31 @@ class ConnectionHelper:
 
     @classmethod
     def on_outcad_vars(cls):
-        if len(InfoHolder.get_print_array()) > 0:
-            to_print: str = "&".join(InfoHolder.get_print_array())
+        if len(ShufflecadHolder.get_print_array()) > 0:
+            to_print: str = "&".join(ShufflecadHolder.get_print_array())
             cls.outcad_variables_channel.out_string = to_print
-            InfoHolder.clear_print_array()
+            ShufflecadHolder.clear_print_array()
         else:
             cls.outcad_variables_channel.out_string = "null"
 
     @classmethod
     def on_rpi_vars(cls):
-        out_lst = [InfoHolder.temperature, InfoHolder.memory_load,
-                   InfoHolder.cpu_load, InfoHolder.power, InfoHolder.spi_time_dev,
-                   InfoHolder.rx_spi_time_dev, InfoHolder.tx_spi_time_dev,
-                   InfoHolder.spi_count_dev, InfoHolder.com_time_dev,
-                   InfoHolder.rx_com_time_dev, InfoHolder.tx_com_time_dev,
-                   InfoHolder.com_count_dev]
-        cls.rpi_variables_channel.out_string = "&".join(out_lst)
+        out_lst = [Common.temperature, Common.memory_load,
+                   Common.cpu_load, Common.power, Common.spi_time_dev,
+                   Common.rx_spi_time_dev, Common.tx_spi_time_dev,
+                   Common.spi_count_dev, Common.com_time_dev,
+                   Common.rx_com_time_dev, Common.tx_com_time_dev,
+                   Common.com_count_dev]
+        cls.rpi_variables_channel.out_string = "&".join(map(str, out_lst))
 
     __camera_toggler = 0
 
     @classmethod
     def on_camera_vars(cls):
         # Logger.write_main_log(str(len(Shared.InfoHolder.camera_variables_array)))
-        if len(InfoHolder.camera_variables_array) > 0:
+        if len(ShufflecadHolder.camera_variables_array) > 0:
             if int(cls.camera_variables_channel.str_from_client) == -1:
-                curr_var = InfoHolder.camera_variables_array[cls.__camera_toggler]
+                curr_var = ShufflecadHolder.camera_variables_array[cls.__camera_toggler]
                 to_send_first = "{0};{1}".format(curr_var.name, ":".join(map(str, curr_var.shape)))
                 # Logger.write_main_log(to_send_first)
 
@@ -294,12 +294,12 @@ class ConnectionHelper:
 
                 # Logger.write_main_log("sent")
 
-                if cls.__camera_toggler + 1 == len(InfoHolder.camera_variables_array):
+                if cls.__camera_toggler + 1 == len(ShufflecadHolder.camera_variables_array):
                     cls.__camera_toggler = 0
                 else:
                     cls.__camera_toggler += 1
             else:
-                curr_var = InfoHolder.camera_variables_array[int(cls.camera_variables_channel.str_from_client)]
+                curr_var = ShufflecadHolder.camera_variables_array[int(cls.camera_variables_channel.str_from_client)]
                 to_send_first = "{0};{1}".format(curr_var.name, ":".join(map(str, curr_var.shape)))
 
                 cls.camera_variables_channel.out_string = to_send_first
@@ -314,7 +314,7 @@ class ConnectionHelper:
             string_vars = cls.joy_variables_channel.out_string.split("&")
             for i in string_vars:
                 name, value = i.split(";")
-                InfoHolder.joystick_values[name] = int(value)
+                ShufflecadHolder.joystick_values[name] = int(value)
 
 
 class SplitFrames(object):

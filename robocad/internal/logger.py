@@ -1,13 +1,13 @@
 import logging
 from datetime import datetime
-from .shared import InfoHolder
+from robocad.common import Common
 
 
 class Logger:
     FORMAT = '[%(levelname)s]\t(%(threadName)-10s)\t%(message)s'
 
     def __init__(self):
-        log_path = '/home/pi/robocad/logs/cad_main.log' if InfoHolder.on_real_robot else './cad_main.log'
+        log_path = '/home/pi/robocad/logs/cad_main.log' if Common.on_real_robot else './cad_main.log'
         logging.basicConfig(level=logging.INFO,
                             format=self.FORMAT,
                             filename=log_path,
