@@ -101,7 +101,7 @@ class VMXStatic:
     flex_6: bool = False
     flex_7: bool = False
 
-    hcdio_values: list[float] = [0.0] * 10
+    hcdio_values: list = [0.0] * 10
 
     @classmethod
     def set_servo_angle(cls, angle: float, pin: int):
