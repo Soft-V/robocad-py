@@ -1,5 +1,6 @@
 import sys
 import ctypes
+from robocad.common import Common
 
 
 class LibHolder:
@@ -100,27 +101,35 @@ class VMXStatic:
     flex_6: bool = False
     flex_7: bool = False
 
+    hcdio_values: list = [0.0] * 10
+
     @classmethod
     def set_servo_angle(cls, angle: float, pin: int):
         dut: float = 0.000666 * angle + 0.05
+        cls.hcdio_values[pin] = dut
         VMXStatic.echo_to_file(str(cls.HCDIO_CONST_ARRAY[pin]) + "=" + str(dut))
 
     @classmethod
     def set_led_state(cls, state: bool, pin: int):
         dut: float = 0.2 if state else 0.0
+        cls.hcdio_values[pin] = dut
         VMXStatic.echo_to_file(str(cls.HCDIO_CONST_ARRAY[pin]) + "=" + str(dut))
 
     @classmethod
     def set_servo_pwm(cls, pwm: float, pin: int):
         dut: float = pwm
+        cls.hcdio_values[pin] = dut
         VMXStatic.echo_to_file(str(cls.HCDIO_CONST_ARRAY[pin]) + "=" + str(dut))
 
     @classmethod
     def disable_servo(cls, pin: int):
+        cls.hcdio_values[pin] = 0.0
         VMXStatic.echo_to_file(str(cls.HCDIO_CONST_ARRAY[pin]) + "=" + "0.0")
 
     @staticmethod
     def echo_to_file(st: str):
+        if not Common.on_real_robot:
+            return None
         original_stdout = sys.stdout
         with open('/dev/pi-blaster', 'w') as f:
             sys.stdout = f  # Change the standard output to the file we created.

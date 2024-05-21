@@ -3,7 +3,7 @@ import sys
 import time
 from threading import Thread
 
-from robocad.shufflecad.shared import InfoHolder
+from robocad.common import Common
 from .shared import TitanStatic
 from .shared import LibHolder
 from funcad.funcad import Funcad
@@ -31,29 +31,29 @@ class TitanCOM:
             while not cls.stop_th:
                 tx_time: float = time.time() * 1000
                 tx_data = cls.set_up_tx_data()
-                InfoHolder.tx_com_time_dev = str(round(time.time() * 1000 - tx_time, 2))
+                Common.tx_com_time_dev = round(time.time() * 1000 - tx_time, 2)
 
                 rx_data: bytearray = LibHolder.rw_usb(tx_data)
 
                 rx_time: float = time.time() * 1000
                 cls.set_up_rx_data(rx_data)
-                InfoHolder.rx_com_time_dev = str(round(time.time() * 1000 - rx_time, 2))
+                Common.rx_com_time_dev = round(time.time() * 1000 - rx_time, 2)
 
                 comm_counter += 1
                 if time.time() - send_count_time > 1:
                     send_count_time = time.time()
-                    InfoHolder.com_count_dev = str(comm_counter)
+                    Common.com_count_dev = comm_counter
                     comm_counter = 0
 
                 time.sleep(0.001)
-                InfoHolder.com_time_dev = str(round(time.time() * 10000) - start_time)
+                Common.com_time_dev = round(time.time() * 10000) - start_time
                 start_time = round(time.time() * 10000)
         except Exception as e:
             LibHolder.stop_usb()
             exc_type, exc_obj, exc_tb = sys.exc_info()
             file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            InfoHolder.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
-            InfoHolder.logger.write_main_log(str(e))
+            Common.logger.write_main_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
+            Common.logger.write_main_log(str(e))
 
     @staticmethod
     def set_up_rx_data(data: bytearray) -> None:
@@ -76,7 +76,7 @@ class TitanCOM:
                     TitanStatic.limit_h_3 = Funcad.access_bit(data[10], 2)
 
         else:
-            InfoHolder.logger.write_main_log("received wrong data " + " ".join(map(str, data)))
+            Common.logger.write_main_log("received wrong data " + " ".join(map(str, data)))
 
     @staticmethod
     def set_up_tx_data() -> bytearray:
