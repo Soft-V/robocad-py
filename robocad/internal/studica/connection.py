@@ -152,4 +152,4 @@ class ParseChannels:
     def parse_studica_channel(data: bytes) -> tuple:
         if len(data) < 52:
             return tuple()
-        return struct.unpack('<4I2f4Hf16B', data)
+        return struct.unpack('<4i2f4Hf16B', data)
