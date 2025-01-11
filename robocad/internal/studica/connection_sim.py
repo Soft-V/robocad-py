@@ -43,7 +43,7 @@ class ConnectionSim(ConnectionBase):
         self.__listen_channel.stop_listening()
         self.__camera_channel.stop_listening()
 
-    def get_camera(self) -> cv2.typing.MatLike:
+    def get_camera(self):
         camera_data = self.__camera_channel.out_bytes
         if len(camera_data) == 921600:
             nparr = np.frombuffer(camera_data, np.uint8)
