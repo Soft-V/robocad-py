@@ -34,7 +34,7 @@ class ConnectionReal(ConnectionBase):
         VMXSPI.stop_th = True
         VMXSPI.th.join()
 
-    def get_camera(self) -> cv2.typing.MatLike:
+    def get_camera(self):
         try:
             ret, frame = self.__camera_instance.read()
             if ret:
