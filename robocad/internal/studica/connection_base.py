@@ -13,5 +13,5 @@ class ConnectionBase(ABC):
         pass
 
     @abstractmethod
-    def get_camera(self) -> cv2.typing.MatLike:
+    def get_camera(self):
         pass
