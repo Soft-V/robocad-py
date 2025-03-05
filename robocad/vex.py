@@ -70,7 +70,7 @@ class RobotVex:
         return angle
 
     def set_servo_claw(self, value):
-        VMXStatic.set_servo_angle(value, 1)
+        VMXStatic.set_servo_angle(value, 3)
 
     def set_servo_arm(self, value):
-        VMXStatic.set_servo_angle(value, port - 2)
+        VMXStatic.set_servo_angle(value, 4)
