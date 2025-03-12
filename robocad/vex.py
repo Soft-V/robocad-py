@@ -13,7 +13,7 @@ class RobotVex:
 
         self.__connection: ConnectionBase = None
 
-        Common.on_real_robot = True
+        Common.on_real_robot = False
         Common.logger = Logger()
 
         signal.signal(signal.SIGTERM, self.handler)
