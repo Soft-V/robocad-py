@@ -23,3 +23,6 @@
 
 ## 0.0.1.1
 - Library fully changed according to the new requirements
+
+## 1.0.3.0
+- Fully rewritten
