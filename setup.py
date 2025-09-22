@@ -10,7 +10,7 @@ classifiers = [
 
 setup(
     name='robocad-py',
-    version='1.0.2.7',
+    version='1.0.3.0',
     description='python lib for real and virtual robots',
     long_description="Python library for real and virtual robots" + '\n\n' + open('CHANGELOG.md').read(),
     url='https://github.com/Soft-V/robocad-py',
@@ -18,7 +18,7 @@ setup(
     author_email='softvery@yandex.ru',
     license='MIT',
     classifiers=classifiers,
-    keywords=['simulator', 'robotics', 'robot', '3d', 'raspberry', 'control'],
+    keywords=['simulator', 'robotics', 'robot', '3d', 'raspberry', 'control', 'robocad'],
     packages=find_packages(),
     install_requires=['numpy', 'funcad']
 )

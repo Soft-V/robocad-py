@@ -4,12 +4,13 @@ import time
 import warnings
 import struct
 
-from robocad.common import Common
+from .robot import Robot
 
 
 class ListenPort:
-    def __init__(self, port: int):
+    def __init__(self, robot: Robot, port: int):
         self.__port = port
+        self.__robot = robot
 
         # other
         self.__stop_thread = False
@@ -25,7 +26,7 @@ class ListenPort:
     def listening(self):
         self.__sct = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
         self.__sct.connect(('127.0.0.1', self.__port))
-        Common.logger.write_main_log("connected: " + str(self.__port))
+        self.__robot.write_log("connected: " + str(self.__port))
         while not self.__stop_thread:
             try:
                 dt = "Wait for data".encode('utf-16-le')
@@ -44,7 +45,7 @@ class ListenPort:
             except (ConnectionAbortedError, BrokenPipeError, OSError):
                 # возникает при отключении сокета
                 break
-        Common.logger.write_main_log("disconnected: " + str(self.__port))
+        self.__robot.write_log("disconnected: " + str(self.__port))
         try:
             self.__sct.shutdown(socket.SHUT_RDWR)
             self.__sct.close()
@@ -60,26 +61,27 @@ class ListenPort:
             try:
                 self.__sct.shutdown(socket.SHUT_RDWR)
             except (OSError, Exception):
-                Common.logger.write_main_log("Something went wrong while shutting down socket on port " +
+                self.__robot.write_log("Something went wrong while shutting down socket on port " +
                                                  str(self.__port))
             if self.__thread is not None:
                 st_time = time.time()
                 # если поток все еще живой, ждем 1 секунды и закрываем сокет
                 while self.__thread.is_alive():
                     if time.time() - st_time > 1:
-                        Common.logger.write_main_log("Something went wrong. Rude disconnection on port " +
+                        self.__robot.write_log("Something went wrong. Rude disconnection on port " +
                                                          str(self.__port))
                         try:
                             self.__sct.close()
                         except (OSError, Exception):
-                            Common.logger.write_main_log("Something went wrong while closing socket on port " +
+                            self.__robot.write_log("Something went wrong while closing socket on port " +
                                                              str(self.__port))
                         st_time = time.time()
 
 
 class TalkPort:
-    def __init__(self, port: int):
+    def __init__(self, robot: Robot, port: int):
         self.__port = port
+        self.__robot = robot
 
         # other
         self.__stop_thread = False
@@ -95,7 +97,7 @@ class TalkPort:
     def talking(self):
         self.__sct = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
         self.__sct.connect(('127.0.0.1', self.__port))
-        Common.logger.write_main_log("connected: " + str(self.__port))
+        self.__robot.write_log("connected: " + str(self.__port))
         while not self.__stop_thread:
             try:
                 dt_ln = struct.pack('<I', len(self.out_bytes))
@@ -108,7 +110,7 @@ class TalkPort:
             except (ConnectionAbortedError, BrokenPipeError, OSError):
                 # возникает при отключении сокета
                 break
-        Common.logger.write_main_log("disconnected: " + str(self.__port))
+        self.__robot.write_log("disconnected: " + str(self.__port))
         try:
             self.__sct.shutdown(socket.SHUT_RDWR)
             self.__sct.close()
@@ -124,32 +126,18 @@ class TalkPort:
             try:
                 self.__sct.shutdown(socket.SHUT_RDWR)
             except (OSError, Exception):
-                Common.logger.write_main_log("Something went wrong while shutting down socket on port " +
+                self.__robot.write_log("Something went wrong while shutting down socket on port " +
                                                  str(self.__port))
             if self.__thread is not None:
                 st_time = time.time()
                 # если поток все еще живой, ждем 1 секунды и закрываем сокет
                 while self.__thread.is_alive():
                     if time.time() - st_time > 1:
-                        Common.logger.write_main_log("Something went wrong. Rude disconnection on port " +
+                        self.__robot.write_log("Something went wrong. Rude disconnection on port " +
                                                          str(self.__port))
                         try:
                             self.__sct.close()
                         except (OSError, Exception):
-                            Common.logger.write_main_log("Something went wrong while closing socket on port " +
+                            self.__robot.write_log("Something went wrong while closing socket on port " +
                                                              str(self.__port))
                         st_time = time.time()
-
-
-class ParseChannels:
-    @staticmethod
-    def join_studica_channel(lst: tuple) -> bytes:
-        if len(lst) < 14:
-            return b''
-        return struct.pack('14f', *lst)
-    
-    @staticmethod
-    def parse_studica_channel(data: bytes) -> tuple:
-        if len(data) < 52:
-            return tuple()
-        return struct.unpack('<4i2f4Hf16B', data)
