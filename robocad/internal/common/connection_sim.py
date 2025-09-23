@@ -4,9 +4,9 @@ import time
 import numpy as np
 import cv2
 
-from .connection import TalkPort, ListenPort, ParseChannels
-from .shared import TitanStatic, VMXStatic
+from .connection import TalkPort, ListenPort
 from .connection_base import ConnectionBase
+from .robot import Robot
 
 
 class ConnectionSim(ConnectionBase):
@@ -14,12 +14,14 @@ class ConnectionSim(ConnectionBase):
     __port_get_data: int = 65432
     __port_camera: int = 65438
 
-    def __init__(self):
-        self.__talk_channel = TalkPort(self.__port_set_data)
+    def __init__(self, robot: Robot):
+        self.__robot = robot
+
+        self.__talk_channel = TalkPort(self.__robot, self.__port_set_data)
         self.__talk_channel.start_talking()
-        self.__listen_channel = ListenPort(self.__port_get_data)
+        self.__listen_channel = ListenPort(self.__robot, self.__port_get_data)
         self.__listen_channel.start_listening()
-        self.__camera_channel = ListenPort(self.__port_camera)
+        self.__camera_channel = ListenPort(self.__robot, self.__port_camera)
         self.__camera_channel.start_listening()
 
     def stop(self) -> None:
