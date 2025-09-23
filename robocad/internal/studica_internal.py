@@ -223,7 +223,10 @@ class TitanCOM:
 
     def com_loop(self) -> None:
         try:
-            self.__connection.com_ini("/dev/ttyACM0", 115200)
+            com_result = self.__connection.com_ini("/dev/ttyACM0", 115200)
+            if com_result != 0:
+                self.__robot.write_log("Failed to open COM")
+                return
 
             start_time: int = round(time.time() * 10000)
             send_count_time: float = time.time()
@@ -352,7 +355,10 @@ class VMXSPI:
 
     def spi_loop(self) -> None:
         try:
-            self.__connection.spi_ini("/dev/spidev1.2", 2, 1000000, 0)
+            spi_result = self.__connection.spi_ini("/dev/spidev1.2", 2, 1000000, 0)
+            if spi_result != 0:
+                self.__robot.write_log("Failed to open SPI")
+                return
 
             start_time: float = time.time() * 1000
             send_count_time: float = time.time()
