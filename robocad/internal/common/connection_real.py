@@ -41,11 +41,11 @@ class ConnectionReal(ConnectionBase):
             pass
         return None
     
-    def spi_ini(self, path: str, channel: int, speed: int, mode: int):
-        self.__lib.init_spi(path, channel, speed, mode)
+    def spi_ini(self, path: str, channel: int, speed: int, mode: int) -> int:
+        return self.__lib.init_spi(path, channel, speed, mode)
 
-    def com_ini(self, path: str, baud: int):
-        self.__lib.init_usb(path, baud)
+    def com_ini(self, path: str, baud: int) -> int:
+        return self.__lib.init_usb(path, baud)
     
     def spi_rw(self, array: bytearray) -> bytearray:
         return self.__lib.rw_spi(array)
