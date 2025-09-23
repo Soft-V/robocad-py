@@ -25,7 +25,11 @@ class ListenPort:
 
     def listening(self):
         self.__sct = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-        self.__sct.connect(('127.0.0.1', self.__port))
+        try:
+            self.__sct.connect(('127.0.0.1', self.__port))
+        except ConnectionRefusedError:
+            self.__robot.write_log("LP: Failed to connect on port " + str(self.__port))
+            print("LP: Failed to connect on port " + str(self.__port))
         self.__robot.write_log("connected: " + str(self.__port))
         while not self.__stop_thread:
             try:
@@ -96,7 +100,11 @@ class TalkPort:
 
     def talking(self):
         self.__sct = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-        self.__sct.connect(('127.0.0.1', self.__port))
+        try:
+            self.__sct.connect(('127.0.0.1', self.__port))
+        except ConnectionRefusedError:
+            self.__robot.write_log("TP: Failed to connect on port " + str(self.__port))
+            print("TP: Failed to connect on port " + str(self.__port))
         self.__robot.write_log("connected: " + str(self.__port))
         while not self.__stop_thread:
             try:

@@ -63,26 +63,26 @@ class StudicaInternal:
 
         self.__connection: ConnectionBase = None
         if not self.__robot.on_real_robot:
-            self.__connection = ConnectionSim()
+            self.__connection = ConnectionSim(self.__robot)
             self.__robocad_conn = RobocadConnection()
-            self.__robocad_conn.start()
+            self.__robocad_conn.start(self.__connection, self.__robot, self)
         else:
-            self.__connection = ConnectionReal()
+            self.__connection = ConnectionReal(self.__robot)
             self.__titan = TitanCOM()
-            self.__titan.start_com()
+            self.__titan.start_com(self.__connection, self.__robot, self)
             self.__vmx = VMXSPI()
-            self.__vmx.start_spi()
+            self.__vmx.start_spi(self.__connection, self.__robot, self)
 
     def stop(self):
         self.__connection.stop()
         if not self.__robot.on_real_robot:
-            self.__robocad_conn.__stop_update_thread = True
-            self.__robocad_conn.__update_thread.join()
+            if self.__robocad_conn is not None:
+                self.__robocad_conn.stop()
         else:
-            self.__titan.__stop_th = True
-            self.__titan.__th.join()
-            self.__vmx.__stop_th = True
-            self.__vmx.__th.join()
+            if self.__titan is not None:
+                self.__titan.stop()
+            if self.__vmx is not None:
+                self.__vmx.stop()
 
     def get_camera(self):
         return self.__connection.get_camera()
@@ -116,6 +116,10 @@ class StudicaInternal:
             sys.stdout = original_stdout  # Reset the standard output to its original value
     
 class RobocadConnection:
+    def __init__(self):
+        self.__update_thread = None
+        self.__stop_update_thread = False
+
     def start(self, connection: ConnectionSim, robot: Robot, robot_internal: StudicaInternal):
         self.__connection: ConnectionSim = connection
         self.__robot: Robot = robot
@@ -127,6 +131,11 @@ class RobocadConnection:
         self.__update_thread = Thread(target=self.__update)
         self.__update_thread.daemon = True
         self.__update_thread.start()
+
+    def stop(self):
+        self.__stop_update_thread = True
+        if self.__update_thread is not None:
+            self.__update_thread.join()
     
     def __set_data(self, values: tuple) -> None:
         self.__connection.set_data(RobocadConnection.join_studica_channel(values))
@@ -193,6 +202,10 @@ class RobocadConnection:
         return struct.unpack('<4i2f4Hf16B', data)
     
 class TitanCOM:
+    def __init__(self):
+        self.__th: Thread = None
+        self.__stop_th: bool = False
+
     def start_com(self, connection: ConnectionReal, robot: Robot, robot_internal: StudicaInternal) -> None:
         self.__connection: ConnectionReal = connection
         self.__robot: Robot = robot
@@ -202,6 +215,11 @@ class TitanCOM:
         self.__th: Thread = Thread(target=self.com_loop)
         self.__th.daemon = True
         self.__th.start()
+
+    def stop(self):
+        self.__stop_th = True
+        if self.__th is not None:
+            self.__th.join()
 
     def com_loop(self) -> None:
         try:
@@ -312,6 +330,10 @@ class TitanCOM:
         return diff
     
 class VMXSPI:
+    def __init__(self):
+        self.__th: Thread = None
+        self.__stop_th: bool = False
+
     def start_spi(self, connection: ConnectionReal, robot: Robot, robot_internal: StudicaInternal) -> None:
         self.__connection: ConnectionReal = connection
         self.__robot: Robot = robot
@@ -322,6 +344,11 @@ class VMXSPI:
         self.__th: Thread = Thread(target=self.spi_loop)
         self.__th.daemon = True
         self.__th.start()
+
+    def stop(self):
+        self.__stop_th = True
+        if self.__th is not None:
+            self.__th.join()
 
     def spi_loop(self) -> None:
         try:
