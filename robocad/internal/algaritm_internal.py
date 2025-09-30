@@ -146,10 +146,10 @@ class TitanCOM:
         tx_data: bytearray = bytearray([0] * 48)
         tx_data[0] = 1
 
-        tx_data[1] = struct.pack('b', int(self.__robot_internal.speed_motor_0))
-        tx_data[2] = struct.pack('b', int(self.__robot_internal.speed_motor_1))
-        tx_data[3] = struct.pack('b', int(self.__robot_internal.speed_motor_2))
-        tx_data[4] = struct.pack('b', int(self.__robot_internal.speed_motor_3))
+        tx_data[1] = int(self.__robot_internal.speed_motor_0).to_bytes(1, 'big', signed = True)
+        tx_data[2] = int(self.__robot_internal.speed_motor_1).to_bytes(1, 'big', signed = True)
+        tx_data[3] = int(self.__robot_internal.speed_motor_2).to_bytes(1, 'big', signed = True)
+        tx_data[4] = int(self.__robot_internal.speed_motor_3).to_bytes(1, 'big', signed = True)
 
         # for ProgramIsRunning
         tx_data[5] = 1
