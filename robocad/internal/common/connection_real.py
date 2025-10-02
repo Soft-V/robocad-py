@@ -6,11 +6,13 @@ import cv2
 from .connection_base import ConnectionBase
 from .robot import Robot
 from .shared import LibHolder
+from .updaters import Updater
 
 
 class ConnectionReal(ConnectionBase):
-    def __init__(self, robot: Robot):
+    def __init__(self, robot: Robot, updater: Updater, with_pi_blaster: bool = True):
         self.__robot = robot
+        self.__updater = updater
         self.__lib = LibHolder()
 
         try:
@@ -20,15 +22,15 @@ class ConnectionReal(ConnectionBase):
             self.__robot.write_log(str(e))
 
         # pi-blaster
-        subprocess.run(['sudo', '/home/pi/pi-blaster/pi-blaster'])
+        if with_pi_blaster:
+            subprocess.run(['sudo', '/home/pi/pi-blaster/pi-blaster'])
         # robot info thread
-        self.__stop_robot_info_thread = False
-        self.__robot_info_thread: Thread = Thread(target=self.__update_rpi_cringe)
+        self.__robot_info_thread: Thread = Thread(target=self.__updater.updater)
         self.__robot_info_thread.daemon = True
         self.__robot_info_thread.start()
 
     def stop(self) -> None:
-        self.__stop_robot_info_thread = True
+        self.__updater.stop_robot_info_thread = True
         self.__robot_info_thread.join()
 
     def get_camera(self):
@@ -58,13 +60,3 @@ class ConnectionReal(ConnectionBase):
 
     def com_stop(self):
         self.__lib.stop_usb()
-    
-    def __update_rpi_cringe(self):
-        from gpiozero import CPUTemperature # type: ignore
-        import psutil # type: ignore
-        cpu_temp: CPUTemperature = CPUTemperature()
-        while not self.__stop_robot_info_thread:
-            self.__robot.temperature = cpu_temp.temperature
-            self.__robot.memory_load = psutil.virtual_memory().percent
-            self.__robot.cpu_load = psutil.cpu_percent(interval=0.5)
-            time.sleep(0.5)

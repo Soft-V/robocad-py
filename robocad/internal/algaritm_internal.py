@@ -11,11 +11,10 @@ from .common.robot import Robot
 from .common.connection_base import ConnectionBase
 from .common.connection_sim import ConnectionSim
 from .common.connection_real import ConnectionReal
+from .common.updaters import ElveesUpdater
 
 
 class AlgaritmInternal:
-    HCDIO_CONST_ARRAY = [4, 18, 17, 27, 23, 22, 24, 25, 7, 5]
-
     def __init__(self, robot: Robot):
         self.__robot = robot
 
@@ -44,7 +43,8 @@ class AlgaritmInternal:
             # self.__robocad_conn = RobocadConnection()
             # self.__robocad_conn.start(self.__connection, self.__robot, self)
         else:
-            self.__connection = ConnectionReal(self.__robot)
+            updater = ElveesUpdater(self.__robot)
+            self.__connection = ConnectionReal(self.__robot, updater, False)
             self.__titan = TitanCOM()
             self.__titan.start_com(self.__connection, self.__robot, self)
             self.__vmx = VMXSPI()

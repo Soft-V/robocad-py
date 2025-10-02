@@ -11,6 +11,7 @@ from .common.robot import Robot
 from .common.connection_base import ConnectionBase
 from .common.connection_sim import ConnectionSim
 from .common.connection_real import ConnectionReal
+from .common.updaters import RpiUpdater
 
 
 class StudicaInternal:
@@ -67,7 +68,8 @@ class StudicaInternal:
             self.__robocad_conn = RobocadConnection()
             self.__robocad_conn.start(self.__connection, self.__robot, self)
         else:
-            self.__connection = ConnectionReal(self.__robot)
+            updater = RpiUpdater(self.__robot)
+            self.__connection = ConnectionReal(self.__robot, updater)
             self.__titan = TitanCOM()
             self.__titan.start_com(self.__connection, self.__robot, self)
             self.__vmx = VMXSPI()
