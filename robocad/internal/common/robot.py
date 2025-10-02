@@ -11,7 +11,7 @@ class Robot(ABC):
 
         # logger object
         FORMAT = '[%(levelname)s]\t(%(threadName)-10s)\t%(message)s'
-        log_path = '/home/pi/robocad.log' if self.on_real_robot else './robocad.log'
+        log_path = '/var/tmp/robocad.log' if self.on_real_robot else './robocad.log'
         logging.basicConfig(level=logging.INFO,
                             format=FORMAT,
                             filename=log_path,
