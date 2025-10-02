@@ -10,10 +10,10 @@ from .updaters import Updater
 
 
 class ConnectionReal(ConnectionBase):
-    def __init__(self, robot: Robot, updater: Updater, with_pi_blaster: bool = True):
+    def __init__(self, robot: Robot, updater: Updater, first_path: str, with_pi_blaster: bool = True):
         self.__robot = robot
         self.__updater = updater
-        self.__lib = LibHolder()
+        self.__lib = LibHolder(first_path)
 
         try:
             self.__camera_instance = cv2.VideoCapture(0)

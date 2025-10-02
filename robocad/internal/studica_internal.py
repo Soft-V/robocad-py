@@ -69,7 +69,7 @@ class StudicaInternal:
             self.__robocad_conn.start(self.__connection, self.__robot, self)
         else:
             updater = RpiUpdater(self.__robot)
-            self.__connection = ConnectionReal(self.__robot, updater)
+            self.__connection = ConnectionReal(self.__robot, updater, '/home/pi')
             self.__titan = TitanCOM()
             self.__titan.start_com(self.__connection, self.__robot, self)
             self.__vmx = VMXSPI()

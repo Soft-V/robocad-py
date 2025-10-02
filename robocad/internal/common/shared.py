@@ -2,8 +2,8 @@ import ctypes
 
 
 class LibHolder:
-    def __init__(self):
-        self.lib = ctypes.cdll.LoadLibrary('/home/pi/CommonRPiLibrary/CommonRPiLibrary/build/libCommonRPiLibrary.so')
+    def __init__(self, first_path: str):
+        self.lib = ctypes.cdll.LoadLibrary(first_path + '/CommonRPiLibrary/CommonRPiLibrary/build/libCommonRPiLibrary.so')
         self.lib.StartSPI.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.c_int, ctypes.c_int]
         self.lib.StartSPI.restype = ctypes.c_int
         self.lib.StartUSB.argtypes = [ctypes.c_char_p, ctypes.c_int]
