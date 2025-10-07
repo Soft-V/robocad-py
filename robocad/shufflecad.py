@@ -169,12 +169,12 @@ class ConnectionHelper:
             self.outcad_variables_channel.out_string = "null"
 
     def on_rpi_vars(self):
-        out_lst = [self.__robot.__temperature, self.__robot.__memory_load,
-                   self.__robot.__cpu_load, self.__robot.power, self.__robot.__spi_time_dev,
-                   self.__robot.__rx_spi_time_dev, self.__robot.__tx_spi_time_dev,
-                   self.__robot.__spi_count_dev, self.__robot.__com_time_dev,
-                   self.__robot.__rx_com_time_dev, self.__robot.__tx_com_time_dev,
-                   self.__robot.__com_count_dev]
+        out_lst = [self.__robot.robot_info.temperature, self.__robot.robot_info.memory_load,
+                   self.__robot.robot_info.cpu_load, self.__robot.power, self.__robot.robot_info.spi_time_dev,
+                   self.__robot.robot_info.rx_spi_time_dev, self.__robot.robot_info.tx_spi_time_dev,
+                   self.__robot.robot_info.spi_count_dev, self.__robot.robot_info.com_time_dev,
+                   self.__robot.robot_info.rx_com_time_dev, self.__robot.robot_info.tx_com_time_dev,
+                   self.__robot.robot_info.com_count_dev]
         self.rpi_variables_channel.out_string = "&".join(map(str, out_lst))
 
     __camera_toggler = 0
@@ -282,7 +282,12 @@ class ListenPort:
         self.__sct.bind(('0.0.0.0', self.__port))
         self.__sct.listen(1)
 
-        connection_out = self.__sct.accept()[0].makefile('rwb')
+        try:
+            connection_out = self.__sct.accept()[0].makefile('rwb')
+        except OSError:
+            self.__robot.write_log("Shufflecad LP: Failed to connect on port " + str(self.__port))
+            return
+        
         handler = SplitFrames(connection_out)
         while not self.__stop_thread:
             try:
@@ -300,8 +305,10 @@ class ListenPort:
                 self.__robot.write_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
                 self.__robot.write_log(str(e))
                 break
-        self.__sct.shutdown(socket.SHUT_RDWR)
-        self.__sct.close()
+        try:
+            self.__sct.shutdown(socket.SHUT_RDWR)
+            self.__sct.close()
+        except (OSError, Exception): pass  # idc
 
     def reset_out(self):
         self.out_string = 'null'
@@ -368,7 +375,12 @@ class TalkPort:
         self.__sct.bind(('0.0.0.0', self.__port))
         self.__sct.listen(1)
 
-        connection_out = self.__sct.accept()[0].makefile('rwb')
+        try:
+            connection_out = self.__sct.accept()[0].makefile('rwb')
+        except OSError:
+            self.__robot.write_log("Shufflecad TP: Failed to connect on port " + str(self.__port))
+            return
+        
         handler = SplitFrames(connection_out)
         while not self.__stop_thread:
             try:
@@ -392,8 +404,10 @@ class TalkPort:
                 self.__robot.write_log(" ".join(map(str, [exc_type, file_name, exc_tb.tb_lineno])))
                 self.__robot.write_log(str(e))
                 break
-        self.__sct.shutdown(socket.SHUT_RDWR)
-        self.__sct.close()
+        try:
+            self.__sct.shutdown(socket.SHUT_RDWR)
+            self.__sct.close()
+        except (OSError, Exception): pass  # idc
 
     def reset_out(self):
         self.out_string = 'null'

@@ -3,7 +3,23 @@ from datetime import datetime
 
 import logging
 from logging import Logger
+from threading import Lock
 
+
+class RobotInfo:
+    def __init__(self):
+        # some things
+        self.spi_time_dev: float = 0
+        self.rx_spi_time_dev: float = 0
+        self.tx_spi_time_dev: float = 0
+        self.spi_count_dev: float = 0
+        self.com_time_dev: float = 0
+        self.rx_com_time_dev: float = 0
+        self.tx_com_time_dev: float = 0
+        self.com_count_dev: float = 0
+        self.temperature: float = 0
+        self.memory_load: float = 0
+        self.cpu_load: float = 0
 
 class Robot(ABC):
     def __init__(self, on_real_robot = True):
@@ -17,22 +33,14 @@ class Robot(ABC):
                             filename=log_path,
                             filemode='w+')
         self.logger: Logger = logging.getLogger()
+        self.log_lock = Lock()
 
         # control the type of the shufflecad work
         self.power: float = 0.0
 
-        # some things
-        self.__spi_time_dev: float = 0
-        self.__rx_spi_time_dev: float = 0
-        self.__tx_spi_time_dev: float = 0
-        self.__spi_count_dev: float = 0
-        self.__com_time_dev: float = 0
-        self.__rx_com_time_dev: float = 0
-        self.__tx_com_time_dev: float = 0
-        self.__com_count_dev: float = 0
-        self.__temperature: float = 0
-        self.__memory_load: float = 0
-        self.__cpu_load: float = 0
+        # robot info
+        self.robot_info: RobotInfo = RobotInfo()
     
     def write_log(self, s: str):
-        self.logger.info(datetime.now().strftime("%H:%M:%S") + " " + s)
+        with self.log_lock:
+            self.logger.info(datetime.now().strftime("%H:%M:%S") + " " + s)
