@@ -44,7 +44,7 @@ class AlgaritmInternal:
             # self.__robocad_conn.start(self.__connection, self.__robot, self)
         else:
             updater = ElveesUpdater(self.__robot)
-            self.__connection = ConnectionReal(self.__robot, updater, '/home/elvees', False)
+            self.__connection = ConnectionReal(self.__robot, updater, '/home/pi', False)
             self.__titan = TitanCOM()
             self.__titan.start_com(self.__connection, self.__robot, self)
             self.__vmx = VMXSPI()
