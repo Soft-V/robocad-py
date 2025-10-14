@@ -11,7 +11,7 @@ from .common.robot import Robot
 from .common.connection_base import ConnectionBase
 from .common.connection_sim import ConnectionSim
 from .common.connection_real import ConnectionReal
-from .common.updaters import ElveesUpdater
+from .common.updaters import RepkaUpdater
 
 
 class AlgaritmInternal:
@@ -43,7 +43,7 @@ class AlgaritmInternal:
             # self.__robocad_conn = RobocadConnection()
             # self.__robocad_conn.start(self.__connection, self.__robot, self)
         else:
-            updater = ElveesUpdater(self.__robot)
+            updater = RepkaUpdater(self.__robot)
             self.__connection = ConnectionReal(self.__robot, updater, '/home/pi', False)
             self.__titan = TitanCOM()
             self.__titan.start_com(self.__connection, self.__robot, self)
@@ -96,15 +96,15 @@ class TitanCOM:
             send_count_time: float = time.time()
             comm_counter = 0
             while not self.__stop_th:
-                tx_time: float = time.time() * 1000
+                tx_time: float = round(time.time() * 10000)
                 tx_data = self.set_up_tx_data()
-                self.__robot.robot_info.tx_com_time_dev = round(time.time() * 1000 - tx_time, 2)
+                self.__robot.robot_info.tx_com_time_dev = round(time.time() * 10000) - tx_time
 
                 rx_data: bytearray = self.__connection.com_rw(tx_data)
 
-                rx_time: float = time.time() * 1000
+                rx_time: float = round(time.time() * 10000)
                 self.set_up_rx_data(rx_data)
-                self.__robot.robot_info.rx_com_time_dev = round(time.time() * 1000 - rx_time, 2)
+                self.__robot.robot_info.rx_com_time_dev = round(time.time() * 10000) - rx_time
 
                 comm_counter += 1
                 if time.time() - send_count_time > 1:
@@ -186,19 +186,19 @@ class VMXSPI:
                 self.__robot.write_log("Failed to open SPI")
                 return
 
-            start_time: float = time.time() * 1000
+            start_time: float = round(time.time() * 10000)
             send_count_time: float = time.time()
             comm_counter = 0
             while not self.__stop_th:
-                tx_time: float = time.time() * 1000
+                tx_time: float = round(time.time() * 10000)
                 tx_list = self.set_up_tx_data()
-                self.__robot.robot_info.tx_spi_time_dev = round(time.time() * 1000 - tx_time, 2)
+                self.__robot.robot_info.tx_spi_time_dev = round(time.time() * 10000) - tx_time
 
                 rx_list: bytearray = self.__connection.spi_rw(tx_list)
 
-                rx_time: float = time.time() * 1000
+                rx_time: float = round(time.time() * 10000)
                 self.set_up_rx_data(rx_list)
-                self.__robot.robot_info.rx_spi_time_dev = round(time.time() * 1000 - rx_time, 2)
+                self.__robot.robot_info.rx_spi_time_dev = round(time.time() * 10000) - rx_time
 
                 comm_counter += 1
                 if time.time() - send_count_time > 1:
@@ -207,8 +207,8 @@ class VMXSPI:
                     comm_counter = 0
 
                 time.sleep(0.002)
-                self.__robot.robot_info.spi_time_dev = round(time.time() * 1000 - start_time, 2)
-                start_time = time.time() * 1000
+                self.__robot.robot_info.spi_time_dev = round(time.time() * 10000) - start_time
+                start_time = round(time.time() * 10000)
         except (Exception, EOFError) as e:
             self.__connection.spi_stop()
             exc_type, exc_obj, exc_tb = sys.exc_info()
