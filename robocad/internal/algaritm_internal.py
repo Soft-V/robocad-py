@@ -130,14 +130,14 @@ class TitanCOM:
                 self.__robot_internal.enc_motor_2 = ((data[12] & 0xff) << 24) | ((data[11] & 0xff) << 16) | ((data[10] & 0xff) << 8) | (data[9] & 0xff)
                 self.__robot_internal.enc_motor_3 = ((data[16] & 0xff) << 24) | ((data[15] & 0xff) << 16) | ((data[14] & 0xff) << 8) | (data[13] & 0xff)
 
-                self.__robot_internal.limit_l_0 = Funcad.access_bit(data[9], 0)
-                self.__robot_internal.limit_h_0 = Funcad.access_bit(data[9], 1)
-                self.__robot_internal.limit_l_1 = Funcad.access_bit(data[9], 2)
-                self.__robot_internal.limit_h_1 = Funcad.access_bit(data[9], 3)
-                self.__robot_internal.limit_l_2 = Funcad.access_bit(data[9], 4)
-                self.__robot_internal.limit_h_2 = Funcad.access_bit(data[9], 5)
-                self.__robot_internal.limit_l_3 = Funcad.access_bit(data[9], 6)
-                self.__robot_internal.limit_h_3 = Funcad.access_bit(data[9], 7)
+                self.__robot_internal.limit_l_0 = Funcad.access_bit(data[17], 0)
+                self.__robot_internal.limit_h_0 = Funcad.access_bit(data[17], 1)
+                self.__robot_internal.limit_l_1 = Funcad.access_bit(data[17], 2)
+                self.__robot_internal.limit_h_1 = Funcad.access_bit(data[17], 3)
+                self.__robot_internal.limit_l_2 = Funcad.access_bit(data[17], 4)
+                self.__robot_internal.limit_h_2 = Funcad.access_bit(data[17], 5)
+                self.__robot_internal.limit_l_3 = Funcad.access_bit(data[17], 6)
+                self.__robot_internal.limit_h_3 = Funcad.access_bit(data[17], 7)
 
         else:
             self.__robot.write_log("received wrong data " + " ".join(map(str, data)))
