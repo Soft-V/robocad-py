@@ -36,6 +36,10 @@ class AlgaritmInternal:
         self.limit_l_3: bool = False
         self.limit_h_3: bool = False
 
+         # from vmx
+        self.yaw: float = 0
+        self.yaw_unlim: float = 0
+
         self.__connection: ConnectionBase = None
         if not self.__robot.on_real_robot:
             pass
@@ -251,7 +255,7 @@ class VMXSPI:
         tx_list: bytearray = bytearray([0x00] * 10)
 
         if self.__toggler == 0:
-            tx_list[0] = 1
+            tx_list[0] = 0x20
 
             tx_list[9] = 222
         return tx_list
