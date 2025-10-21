@@ -39,6 +39,18 @@ class AlgaritmInternal:
          # from vmx
         self.yaw: float = 0
         self.yaw_unlim: float = 0
+        self.ultrasound_1: float = 0
+        self.ultrasound_2: float = 0
+        self.ultrasound_3: float = 0
+        self.ultrasound_4: float = 0
+        self.analog_1: int = 0
+        self.analog_2: int = 0
+        self.analog_3: int = 0
+        self.analog_4: int = 0
+        self.analog_5: int = 0
+        self.analog_6: int = 0
+        self.analog_7: int = 0
+        self.analog_8: int = 0
 
         self.__connection: ConnectionBase = None
         if not self.__robot.on_real_robot:
@@ -185,7 +197,7 @@ class VMXSPI:
 
     def spi_loop(self) -> None:
         try:
-            spi_result = self.__connection.spi_ini("/dev/spidev1.2", 2, 1000000, 0)
+            spi_result = self.__connection.spi_ini("/dev/spidev0.0", 0, 1000000, 0)
             if spi_result != 0:
                 self.__robot.write_log("Failed to open SPI")
                 return
@@ -222,37 +234,28 @@ class VMXSPI:
 
     def set_up_rx_data(self, data: bytearray) -> None:
         if data[0] == 1:
-            yaw_ui: int = (data[2] & 0xff) << 8 | (data[1] & 0xff)
-            us1_ui: int = (data[4] & 0xff) << 8 | (data[3] & 0xff)
-            self.__robot_internal.ultrasound_1 = us1_ui / 100
-            us2_ui: int = (data[6] & 0xff) << 8 | (data[5] & 0xff)
-            self.__robot_internal.ultrasound_2 = us2_ui / 100
-
-            power: float = ((data[8] & 0xff) << 8 | (data[7] & 0xff)) / 100
-            self.__robot.power = power
-
-            # calc yaw unlim
-            new_yaw = (yaw_ui / 100) * (1 if Funcad.access_bit(data[9], 1) else -1)
-            self.calc_yaw_unlim(new_yaw, self.__robot_internal.yaw)
-            self.__robot_internal.yaw = new_yaw
-
-            self.__robot_internal.flex_0 = Funcad.access_bit(data[9], 2)
-            self.__robot_internal.flex_1 = Funcad.access_bit(data[9], 3)
-            self.__robot_internal.flex_2 = Funcad.access_bit(data[9], 4)
-            self.__robot_internal.flex_3 = Funcad.access_bit(data[9], 5)
-            self.__robot_internal.flex_4 = Funcad.access_bit(data[9], 6)
-        elif data[0] == 2:
             self.__robot_internal.analog_1 = (data[2] & 0xff) << 8 | (data[1] & 0xff)
             self.__robot_internal.analog_2 = (data[4] & 0xff) << 8 | (data[3] & 0xff)
             self.__robot_internal.analog_3 = (data[6] & 0xff) << 8 | (data[5] & 0xff)
             self.__robot_internal.analog_4 = (data[8] & 0xff) << 8 | (data[7] & 0xff)
+            self.__robot_internal.analog_5 = (data[10] & 0xff) << 8 | (data[9] & 0xff)
+            self.__robot_internal.analog_6 = (data[12] & 0xff) << 8 | (data[11] & 0xff)
+            self.__robot_internal.analog_7 = (data[14] & 0xff) << 8 | (data[13] & 0xff)
+        elif data[0] == 2:
+            self.__robot_internal.analog_8 = (data[2] & 0xff) << 8 | (data[1] & 0xff)
 
-            self.__robot_internal.flex_5 = Funcad.access_bit(data[9], 1)
-            self.__robot_internal.flex_6 = Funcad.access_bit(data[9], 2)
-            self.__robot_internal.flex_7 = Funcad.access_bit(data[9], 3)
+            us1_ui: int = (data[4] & 0xff) << 8 | (data[3] & 0xff)
+            self.__robot_internal.ultrasound_1 = us1_ui / 100
+            us2_ui: int = (data[6] & 0xff) << 8 | (data[5] & 0xff)
+            self.__robot_internal.ultrasound_2 = us2_ui / 100
+            us3_ui: int = (data[8] & 0xff) << 8 | (data[7] & 0xff)
+            self.__robot_internal.ultrasound_3 = us3_ui / 100
+            us4_ui: int = (data[10] & 0xff) << 8 | (data[9] & 0xff)
+            self.__robot_internal.ultrasound_4 = us4_ui / 100
+            pass
 
     def set_up_tx_data(self) -> bytearray:
-        tx_list: bytearray = bytearray([0x00] * 10)
+        tx_list: bytearray = bytearray([0x00] * 16)
 
         if self.__toggler == 0:
             tx_list[0] = 0x20
