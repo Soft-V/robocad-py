@@ -70,6 +70,58 @@ class RobotAlgaritm(Robot):
     @property
     def motor_enc_3(self):
         return self.__algaritm_internal.enc_motor_3
+    
+    @property
+    def yaw(self):
+        return self.__algaritm_internal.yaw
+    
+    @property
+    def us_1(self):
+        return self.__algaritm_internal.ultrasound_1
+
+    @property
+    def us_2(self):
+        return self.__algaritm_internal.ultrasound_2
+    
+    @property
+    def us_3(self):
+        return self.__algaritm_internal.ultrasound_3
+    
+    @property
+    def us_4(self):
+        return self.__algaritm_internal.ultrasound_4
+
+    @property
+    def analog_1(self):
+        return self.__algaritm_internal.analog_1
+
+    @property
+    def analog_2(self):
+        return self.__algaritm_internal.analog_2
+
+    @property
+    def analog_3(self):
+        return self.__algaritm_internal.analog_3
+
+    @property
+    def analog_4(self):
+        return self.__algaritm_internal.analog_4
+    
+    @property
+    def analog_5(self):
+        return self.__algaritm_internal.analog_5
+    
+    @property
+    def analog_6(self):
+        return self.__algaritm_internal.analog_6
+    
+    @property
+    def analog_7(self):
+        return self.__algaritm_internal.analog_7
+    
+    @property
+    def analog_8(self):
+        return self.__algaritm_internal.analog_8
 
     @property
     def titan_limits(self) -> list:
