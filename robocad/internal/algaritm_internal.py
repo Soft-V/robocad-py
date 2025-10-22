@@ -56,6 +56,8 @@ class AlgaritmInternal:
         self.analog_7: int = 0
         self.analog_8: int = 0
 
+        self.servo_angles: list = [0.0] * 8
+
         self.__connection: ConnectionBase = None
         if not self.__robot.on_real_robot:
             pass
@@ -84,6 +86,9 @@ class AlgaritmInternal:
 
     def get_camera(self):
         return self.__connection.get_camera()
+    
+    def set_servo_angle(self, angle: float, pin: int):
+        self.servo_angles[pin] = angle
     
 class TitanCOM:
     def __init__(self):
@@ -276,9 +281,16 @@ class VMXSPI:
         tx_list: bytearray = bytearray([0x00] * 16)
 
         if self.__toggler == 0:
-            tx_list[0] = 0x20
+            tx_list[0] = 1
 
-            tx_list[9] = 222
+            tx_list[1] = self.__robot_internal.servo_angles[0]
+            tx_list[2] = self.__robot_internal.servo_angles[1]
+            tx_list[3] = self.__robot_internal.servo_angles[2]
+            tx_list[4] = self.__robot_internal.servo_angles[3]
+            tx_list[5] = self.__robot_internal.servo_angles[4]
+            tx_list[6] = self.__robot_internal.servo_angles[5]
+            tx_list[7] = self.__robot_internal.servo_angles[6]
+            tx_list[8] = self.__robot_internal.servo_angles[7]
         return tx_list
 
     def calc_angle_unlim(self, new_angle: float, old_angle: float) -> float:

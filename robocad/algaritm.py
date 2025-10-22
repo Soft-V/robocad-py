@@ -133,3 +133,7 @@ class RobotAlgaritm(Robot):
     @property
     def camera_image(self):
         return self.__algaritm_internal.get_camera()
+    
+    # port is from 1 to 8 included
+    def set_angle_servo(self, value: float, port: int):
+        self.__algaritm_internal.set_servo_angle(value, port - 1)
