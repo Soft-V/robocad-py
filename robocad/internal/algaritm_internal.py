@@ -283,14 +283,14 @@ class VMXSPI:
         if self.__toggler == 0:
             tx_list[0] = 1
 
-            tx_list[1] = self.__robot_internal.servo_angles[0]
-            tx_list[2] = self.__robot_internal.servo_angles[1]
-            tx_list[3] = self.__robot_internal.servo_angles[2]
-            tx_list[4] = self.__robot_internal.servo_angles[3]
-            tx_list[5] = self.__robot_internal.servo_angles[4]
-            tx_list[6] = self.__robot_internal.servo_angles[5]
-            tx_list[7] = self.__robot_internal.servo_angles[6]
-            tx_list[8] = self.__robot_internal.servo_angles[7]
+            tx_list[1] = int(self.__robot_internal.servo_angles[0])
+            tx_list[2] = int(self.__robot_internal.servo_angles[1])
+            tx_list[3] = int(self.__robot_internal.servo_angles[2])
+            tx_list[4] = int(self.__robot_internal.servo_angles[3])
+            tx_list[5] = int(self.__robot_internal.servo_angles[4])
+            tx_list[6] = int(self.__robot_internal.servo_angles[5])
+            tx_list[7] = int(self.__robot_internal.servo_angles[6])
+            tx_list[8] = int(self.__robot_internal.servo_angles[7])
         return tx_list
 
     def calc_angle_unlim(self, new_angle: float, old_angle: float) -> float:
