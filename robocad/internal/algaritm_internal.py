@@ -36,9 +36,13 @@ class AlgaritmInternal:
         self.limit_l_3: bool = False
         self.limit_h_3: bool = False
 
-         # from vmx
+        # from vmx
         self.yaw: float = 0
         self.yaw_unlim: float = 0
+        self.pitch: float = 0
+        self.pitch_unlim: float = 0
+        self.roll: float = 0
+        self.roll_unlim: float = 0
         self.ultrasound_1: float = 0
         self.ultrasound_2: float = 0
         self.ultrasound_3: float = 0
@@ -252,7 +256,21 @@ class VMXSPI:
             self.__robot_internal.ultrasound_3 = us3_ui / 100
             us4_ui: int = (data[10] & 0xff) << 8 | (data[9] & 0xff)
             self.__robot_internal.ultrasound_4 = us4_ui / 100
-            pass
+        elif data[0] == 3:
+            yaw_ui: int = (data[2] & 0xff) << 8 | (data[1] & 0xff)
+            new_yaw = (yaw_ui / 100) * (1 if Funcad.access_bit(data[7], 1) else -1)
+            self.__robot_internal.yaw_unlim += self.calc_angle_unlim(new_yaw, self.__robot_internal.yaw)
+            self.__robot_internal.yaw = new_yaw
+
+            pitch_ui: int = (data[4] & 0xff) << 8 | (data[3] & 0xff)
+            new_pitch = (pitch_ui / 100) * (1 if Funcad.access_bit(data[7], 2) else -1)
+            self.__robot_internal.pitch_unlim += self.calc_angle_unlim(new_pitch, self.__robot_internal.pitch)
+            self.__robot_internal.pitch = new_pitch
+
+            roll_ui: int = (data[6] & 0xff) << 8 | (data[5] & 0xff)
+            new_roll = (roll_ui / 100) * (1 if Funcad.access_bit(data[7], 3) else -1)
+            self.__robot_internal.roll_unlim += self.calc_angle_unlim(new_roll, self.__robot_internal.roll)
+            self.__robot_internal.roll = new_roll
 
     def set_up_tx_data(self) -> bytearray:
         tx_list: bytearray = bytearray([0x00] * 16)
@@ -263,12 +281,12 @@ class VMXSPI:
             tx_list[9] = 222
         return tx_list
 
-    def calc_yaw_unlim(self, new_yaw: float, old_yaw: float):
-        delta_yaw = new_yaw - old_yaw
-        if delta_yaw < -180:
-            delta_yaw = 180 - old_yaw
-            delta_yaw += 180 + new_yaw
-        elif delta_yaw > 180:
-            delta_yaw = (180 + old_yaw) * -1
-            delta_yaw += (180 - new_yaw) * -1
-        self.__robot_internal.yaw_unlim += delta_yaw
+    def calc_angle_unlim(self, new_angle: float, old_angle: float) -> float:
+        delta_angle = new_angle - old_angle
+        if delta_angle < -180:
+            delta_angle = 180 - old_angle
+            delta_angle += 180 + new_angle
+        elif delta_angle > 180:
+            delta_angle = (180 + old_angle) * -1
+            delta_angle += (180 - new_angle) * -1
+        return delta_angle
