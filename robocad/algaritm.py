@@ -122,6 +122,34 @@ class RobotAlgaritm(Robot):
     @property
     def analog_8(self):
         return self.__algaritm_internal.analog_8
+    
+    @property
+    def additional_servo_1(self):
+        return self.__algaritm_internal.additional_servo_1
+
+    @additional_servo_1.setter
+    def additional_servo_1(self, value):
+        self.__algaritm_internal.additional_servo_1 = value
+
+    @property
+    def additional_servo_2(self):
+        return self.__algaritm_internal.additional_servo_2
+
+    @additional_servo_2.setter
+    def additional_servo_2(self, value):
+        self.__algaritm_internal.additional_servo_2 = value
+
+    # num 1 or 2
+    def step_motor_move(self, num, steps: int, steps_per_second: int, direction: bool):
+        self.__algaritm_internal.step_motor_move(num, steps, steps_per_second, direction)
+
+    @property
+    def is_step_1_busy(self):
+        return self.__algaritm_internal.is_step_1_busy
+    
+    @property
+    def is_step_2_busy(self):
+        return self.__algaritm_internal.is_step_2_busy
 
     @property
     def titan_limits(self) -> list:

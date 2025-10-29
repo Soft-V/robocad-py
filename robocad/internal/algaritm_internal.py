@@ -35,6 +35,16 @@ class AlgaritmInternal:
         self.limit_h_2: bool = False
         self.limit_l_3: bool = False
         self.limit_h_3: bool = False
+        self.additional_servo_1: float = 0.0
+        self.additional_servo_2: float = 0.0
+        self.is_step_1_busy: bool = False
+        self.is_step_2_busy: bool = False
+        self.step_motor_1_steps: int = 0
+        self.step_motor_2_steps: int = 0
+        self.step_motor_1_steps_per_s: int = 0
+        self.step_motor_2_steps_per_s: int = 0
+        self.step_motor_1_direction: bool = False
+        self.step_motor_2_direction: bool = False
 
         # from vmx
         self.yaw: float = 0
@@ -66,7 +76,7 @@ class AlgaritmInternal:
             # self.__robocad_conn.start(self.__connection, self.__robot, self)
         else:
             updater = RepkaUpdater(self.__robot)
-            self.__connection = ConnectionReal(self.__robot, updater, '/home/pi', False)
+            self.__connection = ConnectionReal(self.__robot, updater, '/home/pi', False, 2)
             self.__titan = TitanCOM()
             self.__titan.start_com(self.__connection, self.__robot, self)
             self.__vmx = VMXSPI()
@@ -89,6 +99,17 @@ class AlgaritmInternal:
     
     def set_servo_angle(self, angle: float, pin: int):
         self.servo_angles[pin] = angle
+
+    def step_motor_move(self, num, steps: int, steps_per_second: int, direction: bool):
+        if num == 1:
+            self.step_motor_1_steps = steps
+            self.step_motor_1_steps_per_s = steps_per_second
+            self.step_motor_1_direction = direction
+        elif num == 2:
+            self.step_motor_2_steps = steps
+            self.step_motor_2_steps_per_s = steps_per_second
+            self.step_motor_2_direction = direction
+
     
 class TitanCOM:
     def __init__(self):
@@ -149,7 +170,7 @@ class TitanCOM:
 
     def set_up_rx_data(self, data: bytearray) -> None:
         if data[0] == 1:
-            if data[18] == 222:
+            if data[40] == 222:
                 self.__robot_internal.enc_motor_0 = ((data[4] & 0xff) << 24) | ((data[3] & 0xff) << 16) | ((data[2] & 0xff) << 8) | (data[1] & 0xff)
                 self.__robot_internal.enc_motor_1 = ((data[8] & 0xff) << 24) | ((data[7] & 0xff) << 16) | ((data[6] & 0xff) << 8) | (data[5] & 0xff)
                 self.__robot_internal.enc_motor_2 = ((data[12] & 0xff) << 24) | ((data[11] & 0xff) << 16) | ((data[10] & 0xff) << 8) | (data[9] & 0xff)
@@ -164,6 +185,8 @@ class TitanCOM:
                 self.__robot_internal.limit_l_3 = Funcad.access_bit(data[17], 6)
                 self.__robot_internal.limit_h_3 = Funcad.access_bit(data[17], 7)
 
+                self.__robot_internal.is_step_1_busy = (data[18] != 0)
+                self.__robot_internal.is_step_2_busy = (data[19] != 0)
         else:
             self.__robot.write_log("received wrong data " + " ".join(map(str, data)))
 
@@ -176,10 +199,37 @@ class TitanCOM:
         tx_data[3] = int(self.__robot_internal.speed_motor_2).to_bytes(1, 'big', signed = True)[0]
         tx_data[4] = int(self.__robot_internal.speed_motor_3).to_bytes(1, 'big', signed = True)[0]
 
-        # for ProgramIsRunning
-        tx_data[5] = 1
+        # for ProgramIsRunning and directions
+        tx_data[5] = int('1' + ("1") +
+                               ("1" if self.__robot_internal.step_motor_1_direction else "0") +
+                               ("1" if self.__robot_internal.step_motor_2_direction else "0") + '0001', 2)
+        
+        tx_data[6] = int(self.__robot_internal.additional_servo_1)
+        tx_data[7] = int(self.__robot_internal.additional_servo_2)
 
-        tx_data[20] = 222
+        step1_steps: bytearray = Funcad.int_to_4_bytes(abs(self.__robot_internal.step_motor_1_steps))
+        tx_data[8] = step1_steps[0]
+        tx_data[9] = step1_steps[1]
+        tx_data[10] = step1_steps[2]
+        tx_data[11] = step1_steps[3]
+        step2_steps: bytearray = Funcad.int_to_4_bytes(abs(self.__robot_internal.step_motor_2_steps))
+        tx_data[12] = step2_steps[0]
+        tx_data[13] = step2_steps[1]
+        tx_data[14] = step2_steps[2]
+        tx_data[15] = step2_steps[3]
+
+        step1_steps_ps: bytearray = Funcad.int_to_4_bytes(abs(self.__robot_internal.step_motor_1_steps_per_s))
+        tx_data[16] = step1_steps_ps[0]
+        tx_data[17] = step1_steps_ps[1]
+        tx_data[18] = step1_steps_ps[2]
+        tx_data[19] = step1_steps_ps[3]
+        step2_steps_ps: bytearray = Funcad.int_to_4_bytes(abs(self.__robot_internal.step_motor_2_steps_per_s))
+        tx_data[20] = step2_steps_ps[0]
+        tx_data[21] = step2_steps_ps[1]
+        tx_data[22] = step2_steps_ps[2]
+        tx_data[23] = step2_steps_ps[3]
+
+        tx_data[40] = 222
 
         return tx_data
     

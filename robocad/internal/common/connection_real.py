@@ -10,13 +10,13 @@ from .updaters import Updater
 
 
 class ConnectionReal(ConnectionBase):
-    def __init__(self, robot: Robot, updater: Updater, first_path: str, with_pi_blaster: bool = True):
+    def __init__(self, robot: Robot, updater: Updater, first_path: str, with_pi_blaster: bool = True, camera_index: int = 0):
         self.__robot = robot
         self.__updater = updater
         self.__lib = LibHolder(first_path)
 
         try:
-            self.__camera_instance = cv2.VideoCapture(0)
+            self.__camera_instance = cv2.VideoCapture(camera_index)
         except Exception as e:
             self.__robot.write_log("Exception while creating camera instance: ")
             self.__robot.write_log(str(e))
