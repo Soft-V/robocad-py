@@ -46,6 +46,10 @@ class AlgaritmInternal:
         self.step_motor_2_steps_per_s: int = 0
         self.step_motor_1_direction: bool = False
         self.step_motor_2_direction: bool = False
+        self.use_pid: bool = True
+        self.p_pid: float = 0.14
+        self.i_pid: float = 0.1
+        self.d_pid: float = 0.0
 
         # from vmx
         self.yaw: float = 0
@@ -203,7 +207,8 @@ class TitanCOM:
         # for ProgramIsRunning and directions
         tx_data[5] = int('1' + ("1") +
                                ("1" if self.__robot_internal.step_motor_1_direction else "0") +
-                               ("1" if self.__robot_internal.step_motor_2_direction else "0") + '0001', 2)
+                               ("1" if self.__robot_internal.step_motor_2_direction else "0") + 
+                               ("1" if self.__robot_internal.use_pid else "0") + '001', 2)
         
         tx_data[6] = int(self.__robot_internal.additional_servo_1)
         tx_data[7] = int(self.__robot_internal.additional_servo_2)
@@ -229,6 +234,22 @@ class TitanCOM:
         tx_data[21] = step2_steps_ps[1]
         tx_data[22] = step2_steps_ps[2]
         tx_data[23] = step2_steps_ps[3]
+
+        packed_p = struct.pack('<f', self.__robot_internal.p_pid)
+        tx_data[24] = packed_p[0]
+        tx_data[25] = packed_p[1]
+        tx_data[26] = packed_p[2]
+        tx_data[27] = packed_p[3]
+        packed_i = struct.pack('<f', self.__robot_internal.i_pid)
+        tx_data[28] = packed_i[0]
+        tx_data[29] = packed_i[1]
+        tx_data[30] = packed_i[2]
+        tx_data[31] = packed_i[3]
+        packed_d = struct.pack('<f', self.__robot_internal.d_pid)
+        tx_data[32] = packed_d[0]
+        tx_data[33] = packed_d[1]
+        tx_data[34] = packed_d[2]
+        tx_data[35] = packed_d[3]
 
         tx_data[40] = 222
 
