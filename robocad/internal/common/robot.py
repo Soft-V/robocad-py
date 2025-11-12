@@ -5,6 +5,7 @@ import logging
 from logging import Logger
 from threading import Lock
 
+from .robot_configuration import RobotConfiguration
 
 class RobotInfo:
     def __init__(self):
@@ -22,12 +23,12 @@ class RobotInfo:
         self.cpu_load: float = 0
 
 class Robot(ABC):
-    def __init__(self, on_real_robot = True):
+    def __init__(self, on_real_robot, conf: RobotConfiguration):
         self.on_real_robot: bool = on_real_robot
 
         # logger object
         FORMAT = '[%(levelname)s]\t(%(threadName)-10s)\t%(message)s'
-        log_path = '/var/tmp/robocad.log' if self.on_real_robot else './robocad.log'
+        log_path = conf.real_log_path if self.on_real_robot else conf.sim_log_path
         logging.basicConfig(level=logging.INFO,
                             format=FORMAT,
                             filename=log_path,

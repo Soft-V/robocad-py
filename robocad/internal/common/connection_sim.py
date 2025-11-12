@@ -39,6 +39,9 @@ class ConnectionSim(ConnectionBase):
                 return img_bgr
         return None
     
+    def get_lidar(self):
+        return None
+    
     def set_data(self, data: bytes):
         self.__talk_channel.out_bytes = data
 

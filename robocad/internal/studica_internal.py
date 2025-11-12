@@ -12,12 +12,13 @@ from .common.connection_base import ConnectionBase
 from .common.connection_sim import ConnectionSim
 from .common.connection_real import ConnectionReal
 from .common.updaters import RpiUpdater
+from .common.robot_configuration import DefaultStudicaConfiguration
 
 
 class StudicaInternal:
     HCDIO_CONST_ARRAY = [4, 18, 17, 27, 23, 22, 24, 25, 7, 5]
 
-    def __init__(self, robot: Robot):
+    def __init__(self, robot: Robot, conf: DefaultStudicaConfiguration):
         self.__robot = robot
 
         # from Titan
@@ -69,11 +70,11 @@ class StudicaInternal:
             self.__robocad_conn.start(self.__connection, self.__robot, self)
         else:
             updater = RpiUpdater(self.__robot)
-            self.__connection = ConnectionReal(self.__robot, updater, '/home/pi')
+            self.__connection = ConnectionReal(self.__robot, updater, conf)
             self.__titan = TitanCOM()
-            self.__titan.start_com(self.__connection, self.__robot, self)
+            self.__titan.start_com(self.__connection, self.__robot, self, conf)
             self.__vmx = VMXSPI()
-            self.__vmx.start_spi(self.__connection, self.__robot, self)
+            self.__vmx.start_spi(self.__connection, self.__robot, self, conf)
 
     def stop(self):
         self.__connection.stop()
@@ -208,10 +209,11 @@ class TitanCOM:
         self.__th: Thread = None
         self.__stop_th: bool = False
 
-    def start_com(self, connection: ConnectionReal, robot: Robot, robot_internal: StudicaInternal) -> None:
+    def start_com(self, connection: ConnectionReal, robot: Robot, robot_internal: StudicaInternal, conf: DefaultStudicaConfiguration) -> None:
         self.__connection: ConnectionReal = connection
         self.__robot: Robot = robot
         self.__robot_internal: StudicaInternal = robot_internal
+        self.__conf: DefaultStudicaConfiguration = conf
 
         self.__stop_th: bool = False
         self.__th: Thread = Thread(target=self.com_loop)
@@ -225,7 +227,7 @@ class TitanCOM:
 
     def com_loop(self) -> None:
         try:
-            com_result = self.__connection.com_ini("/dev/ttyACM0", 115200)
+            com_result = self.__connection.com_ini(self.__conf.titan_port, self.__conf.titan_baud)
             if com_result != 0:
                 self.__robot.write_log("Failed to open COM")
                 return
@@ -339,10 +341,11 @@ class VMXSPI:
         self.__th: Thread = None
         self.__stop_th: bool = False
 
-    def start_spi(self, connection: ConnectionReal, robot: Robot, robot_internal: StudicaInternal) -> None:
+    def start_spi(self, connection: ConnectionReal, robot: Robot, robot_internal: StudicaInternal, conf: DefaultStudicaConfiguration) -> None:
         self.__connection: ConnectionReal = connection
         self.__robot: Robot = robot
         self.__robot_internal: StudicaInternal = robot_internal
+        self.__conf: DefaultStudicaConfiguration = conf
 
         self.__toggler: int = 0
         self.__stop_th: bool = False
@@ -357,7 +360,7 @@ class VMXSPI:
 
     def spi_loop(self) -> None:
         try:
-            spi_result = self.__connection.spi_ini("/dev/spidev1.2", 2, 1000000, 0)
+            spi_result = self.__connection.spi_ini(self.__conf.vmx_port, self.__conf.vmx_ch, self.__conf.vmx_speed, self.__conf.vmx_mode)
             if spi_result != 0:
                 self.__robot.write_log("Failed to open SPI")
                 return

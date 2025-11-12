@@ -1,13 +1,16 @@
 import signal
 
 from .internal.common.robot import Robot
+from .internal.common.robot_configuration import DefaultAlgaritmConfiguration
 from .internal.algaritm_internal import AlgaritmInternal
 
 
 class RobotAlgaritm(Robot):
-    def __init__(self, is_real_robot: bool = True):
-        super().__init__(is_real_robot)
-        self.__algaritm_internal = AlgaritmInternal(self)
+    def __init__(self, is_real_robot: bool = True, conf: DefaultAlgaritmConfiguration = None):
+        if conf is None: conf = DefaultAlgaritmConfiguration()
+
+        super().__init__(is_real_robot, conf)
+        self.__algaritm_internal = AlgaritmInternal(self, conf)
         self.__reseted_yaw_val = 0.0
 
         signal.signal(signal.SIGTERM, self.handler)
@@ -161,6 +164,10 @@ class RobotAlgaritm(Robot):
     @property
     def camera_image(self):
         return self.__algaritm_internal.get_camera()
+    
+    @property
+    def lidar_data(self):
+        return self.__algaritm_internal.get_lidar()
     
     # port is from 1 to 8 included
     def set_angle_servo(self, value: float, port: int):

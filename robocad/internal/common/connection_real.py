@@ -7,22 +7,30 @@ from .connection_base import ConnectionBase
 from .robot import Robot
 from .shared import LibHolder
 from .updaters import Updater
+from .robot_configuration import RobotConfiguration
+from .components.lidar import YDLidarX2
 
 
 class ConnectionReal(ConnectionBase):
-    def __init__(self, robot: Robot, updater: Updater, first_path: str, with_pi_blaster: bool = True, camera_index: int = 0):
+    def __init__(self, robot: Robot, updater: Updater, conf: RobotConfiguration):
         self.__robot = robot
         self.__updater = updater
-        self.__lib = LibHolder(first_path)
+        self.__lib = LibHolder(conf.lib_holder_first_path)
 
         try:
-            self.__camera_instance = cv2.VideoCapture(camera_index)
+            self.__camera_instance = cv2.VideoCapture(conf.camera_index)
         except Exception as e:
             self.__robot.write_log("Exception while creating camera instance: ")
             self.__robot.write_log(str(e))
 
+        try:
+            self.__lidar_instance = YDLidarX2(conf.lidar_port, baudrate=115200, timeout=0.5)
+        except Exception as e:
+            self.__robot.write_log("Exception while creating lidar instance: ")
+            self.__robot.write_log(str(e))
+
         # pi-blaster
-        if with_pi_blaster:
+        if conf.with_pi_blaster:
             subprocess.run(['sudo', '/home/pi/pi-blaster/pi-blaster'])
         # robot info thread
         self.__robot_info_thread: Thread = Thread(target=self.__updater.updater)
@@ -30,6 +38,9 @@ class ConnectionReal(ConnectionBase):
         self.__robot_info_thread.start()
 
     def stop(self) -> None:
+        if self.__lidar_instance is not None:
+            self.__lidar_instance.close()
+
         self.__updater.stop_robot_info_thread = True
         self.__robot_info_thread.join()
 
@@ -40,6 +51,14 @@ class ConnectionReal(ConnectionBase):
                 return frame
         except Exception:
             # there could be an error if there is no camera instance
+            pass
+        return None
+    
+    def get_lidar(self):
+        try:
+            return self.__lidar_instance.read_scan_packet(wait_timeout=1.0)
+        except Exception:
+            # there could be an error if there is no lidar instance
             pass
         return None
     

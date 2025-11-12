@@ -13,10 +13,11 @@ from .common.connection_base import ConnectionBase
 from .common.connection_sim import ConnectionSim
 from .common.connection_real import ConnectionReal
 from .common.updaters import RepkaUpdater
+from .common.robot_configuration import DefaultAlgaritmConfiguration
 
 
 class AlgaritmInternal:
-    def __init__(self, robot: Robot):
+    def __init__(self, robot: Robot, conf: DefaultAlgaritmConfiguration):
         self.__robot = robot
 
         # from Titan
@@ -81,11 +82,11 @@ class AlgaritmInternal:
             # self.__robocad_conn.start(self.__connection, self.__robot, self)
         else:
             updater = RepkaUpdater(self.__robot)
-            self.__connection = ConnectionReal(self.__robot, updater, '/home/pi', False, 2)
+            self.__connection = ConnectionReal(self.__robot, updater, conf)
             self.__titan = TitanCOM()
-            self.__titan.start_com(self.__connection, self.__robot, self)
+            self.__titan.start_com(self.__connection, self.__robot, self, conf)
             self.__vmx = VMXSPI()
-            self.__vmx.start_spi(self.__connection, self.__robot, self)
+            self.__vmx.start_spi(self.__connection, self.__robot, self, conf)
 
     def stop(self):
         self.__connection.stop()
@@ -101,6 +102,9 @@ class AlgaritmInternal:
 
     def get_camera(self):
         return self.__connection.get_camera()
+    
+    def get_lidar(self):
+        return self.__connection.get_lidar()
     
     def set_servo_angle(self, angle: float, pin: int):
         self.servo_angles[pin] = angle
@@ -121,10 +125,11 @@ class TitanCOM:
         self.__th: Thread = None
         self.__stop_th: bool = False
 
-    def start_com(self, connection: ConnectionReal, robot: Robot, robot_internal: AlgaritmInternal) -> None:
+    def start_com(self, connection: ConnectionReal, robot: Robot, robot_internal: AlgaritmInternal, conf: DefaultAlgaritmConfiguration) -> None:
         self.__connection: ConnectionReal = connection
         self.__robot: Robot = robot
         self.__robot_internal: AlgaritmInternal = robot_internal
+        self.__conf: DefaultAlgaritmConfiguration = conf
 
         self.__stop_th: bool = False
         self.__th: Thread = Thread(target=self.com_loop)
@@ -138,7 +143,7 @@ class TitanCOM:
 
     def com_loop(self) -> None:
         try:
-            com_result = self.__connection.com_ini("/dev/ttyACM0", 115200)
+            com_result = self.__connection.com_ini(self.__conf.titan_port, self.__conf.titan_baud)
             if com_result != 0:
                 self.__robot.write_log("Failed to open COM")
                 return
@@ -260,10 +265,11 @@ class VMXSPI:
         self.__th: Thread = None
         self.__stop_th: bool = False
 
-    def start_spi(self, connection: ConnectionReal, robot: Robot, robot_internal: AlgaritmInternal) -> None:
+    def start_spi(self, connection: ConnectionReal, robot: Robot, robot_internal: AlgaritmInternal, conf: DefaultAlgaritmConfiguration) -> None:
         self.__connection: ConnectionReal = connection
         self.__robot: Robot = robot
         self.__robot_internal: AlgaritmInternal = robot_internal
+        self.__conf: DefaultAlgaritmConfiguration = conf
 
         self.__toggler: int = 0
         self.__stop_th: bool = False
@@ -278,7 +284,7 @@ class VMXSPI:
 
     def spi_loop(self) -> None:
         try:
-            spi_result = self.__connection.spi_ini("/dev/spidev0.0", 0, 1000000, 0)
+            spi_result = self.__connection.spi_ini(self.__conf.vmx_port, self.__conf.vmx_ch, self.__conf.vmx_speed, self.__conf.vmx_mode)
             if spi_result != 0:
                 self.__robot.write_log("Failed to open SPI")
                 return

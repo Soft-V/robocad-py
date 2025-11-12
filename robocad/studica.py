@@ -1,13 +1,16 @@
 import signal
 
 from .internal.common.robot import Robot
+from .internal.common.robot_configuration import DefaultStudicaConfiguration
 from .internal.studica_internal import StudicaInternal
 
 
 class RobotVmxTitan(Robot):
-    def __init__(self, is_real_robot: bool = True):
-        super().__init__(is_real_robot)
-        self.__studica_internal = StudicaInternal(self)
+    def __init__(self, is_real_robot: bool = True, conf: DefaultStudicaConfiguration = None):
+        if conf is None: conf = DefaultStudicaConfiguration()
+
+        super().__init__(is_real_robot, conf)
+        self.__studica_internal = StudicaInternal(self, conf)
         self.__reseted_yaw_val = 0.0
 
         signal.signal(signal.SIGTERM, self.handler)
