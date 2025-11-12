@@ -59,6 +59,7 @@ class ShuffleVariable(object):
     BOOL_TYPE: str = "bool"
     CHART_TYPE: str = "chart"
     SLIDER_TYPE: str = "slider"
+    RADAR_TYPE: str = "radar"
 
     IN_VAR: str = "in"
     OUT_VAR: str = "out"
@@ -77,6 +78,13 @@ class ShuffleVariable(object):
 
     def set_string(self, value: str) -> None:
         self.value = value
+
+    def set_radar(self, value: list) -> None:
+        complete_list = list()
+        for i in value:
+            complete_list.append(i['angle'])
+            complete_list.append(i['value'])
+        self.value = "+".join(map(str, complete_list))
 
     def get_bool(self) -> bool:
         return self.value == "1"

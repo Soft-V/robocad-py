@@ -131,17 +131,9 @@ class YDLidarX2:
                         angle_corr = angle_i + ang_corr_deg
                         # normalize angle into [0,360)
                         angle_corr = angle_corr % 360.0
-                        # convert to radians
-                        ang_rad = math.radians(angle_corr)
-                        # optionally convert to meters:
-                        x_m = (dist_mm / 1000.0) * math.cos(ang_rad)
-                        y_m = (dist_mm / 1000.0) * math.sin(ang_rad)
                         points.append({
-                            'angle_deg': angle_corr,
-                            'distance_mm': dist_mm,
-                            'x_m': x_m,
-                            'y_m': y_m,
-                            'raw_Si': si
+                            'angle': angle_corr,
+                            'value': dist_mm
                         })
                     return points
             else:
@@ -162,13 +154,13 @@ class YDLidarX2:
                 if callback:
                     callback(pts)
                 else:
-                    print(f"Got {len(pts)} points; first: angle={pts[0]['angle_deg']:.2f}° dist={pts[0]['distance_mm']:.2f}mm")
+                    print(f"Got {len(pts)} points; first: angle={pts[0]['angle']:.2f}° dist={pts[0]['value']:.2f}mm")
         except KeyboardInterrupt:
             print("Stop stream.")
 
 def save_points_csv(points, filename):
     """points = list of dicts как выше"""
-    keys = ['angle_deg', 'distance_mm', 'x_m', 'y_m', 'raw_Si']
+    keys = ['angle', 'value']
     with open(filename, 'w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=keys)
         writer.writeheader()
@@ -180,7 +172,7 @@ if __name__ == '__main__':
     lidar = YDLidarX2('/dev/ttyUSB0', baudrate=115200, timeout=0.5)  # замените порт
     try:
         def cb(pts):
-            print(f"Packet: {len(pts)} pts, sample angles: {[round(p['angle_deg'],1) for p in pts[:5]]}")
+            print(f"Packet: {len(pts)} pts, sample angles: {[round(p['angle'],1) for p in pts[:5]]}")
             # сохраняем последний пакет в csv
             save_points_csv(pts, '/home/pi/last_scan.csv')
         lidar.stream_scans(callback=cb)
