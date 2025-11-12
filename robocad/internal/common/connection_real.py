@@ -8,7 +8,7 @@ from .robot import Robot
 from .shared import LibHolder
 from .updaters import Updater
 from .robot_configuration import RobotConfiguration
-from .components.lidar import YDLidarX2
+from .lidar import YDLidarX2
 
 
 class ConnectionReal(ConnectionBase):
@@ -24,7 +24,9 @@ class ConnectionReal(ConnectionBase):
             self.__robot.write_log(str(e))
 
         try:
-            self.__lidar_instance = YDLidarX2(conf.lidar_port, baudrate=115200, timeout=0.5)
+            self.__lidar_instance = YDLidarX2(robot, conf.lidar_port)
+            self.__lidar_instance.connect()
+            self.__lidar_instance.start_scan()
         except Exception as e:
             self.__robot.write_log("Exception while creating lidar instance: ")
             self.__robot.write_log(str(e))
@@ -39,7 +41,8 @@ class ConnectionReal(ConnectionBase):
 
     def stop(self) -> None:
         if self.__lidar_instance is not None:
-            self.__lidar_instance.close()
+            self.__lidar_instance.stop_scan()
+            self.__lidar_instance.disconnect()
 
         self.__updater.stop_robot_info_thread = True
         self.__robot_info_thread.join()
@@ -56,7 +59,7 @@ class ConnectionReal(ConnectionBase):
     
     def get_lidar(self):
         try:
-            return self.__lidar_instance.read_scan_packet(wait_timeout=1.0)
+            return self.__lidar_instance.get_data()
         except Exception:
             # there could be an error if there is no lidar instance
             pass
