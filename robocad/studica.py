@@ -11,7 +11,6 @@ class RobotVmxTitan(Robot):
 
         super().__init__(is_real_robot, conf)
         self.__studica_internal = StudicaInternal(self, conf)
-        self.__reseted_yaw_val = 0.0
 
         signal.signal(signal.SIGTERM, self.handler)
         signal.signal(signal.SIGINT, self.handler)
@@ -76,24 +75,7 @@ class RobotVmxTitan(Robot):
     
     @property
     def yaw(self):
-        return self.__studica_internal.yaw_unlim
-
-    @property
-    def yaw(self):
-        return self.__normalize_angle(self.__get_pure_yaw() - self.__reseted_yaw_val)
-    
-    def reset_yaw(self, value: float = 0.0):
-        self.__reseted_yaw_val = self.__normalize_angle(self.__get_pure_yaw() - value)
-        
-    def __get_pure_yaw(self):
         return self.__studica_internal.yaw
-    
-    def __normalize_angle(self, angle: float) -> float:
-        if angle < -180:
-            return angle + 360
-        elif angle > 180:
-            return angle - 360
-        return angle
 
     @property
     def us_1(self):

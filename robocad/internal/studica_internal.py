@@ -252,7 +252,7 @@ class TitanCOM:
                     self.__robot.robot_info.com_count_dev = comm_counter
                     comm_counter = 0
 
-                time.sleep(0.001)
+                time.sleep(0.002)
                 self.__robot.robot_info.com_time_dev = round(time.time() * 10000) - start_time
                 start_time = round(time.time() * 10000)
         except Exception as e:

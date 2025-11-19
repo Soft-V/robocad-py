@@ -79,6 +79,14 @@ class RobotAlgaritm(Robot):
         return self.__algaritm_internal.yaw
     
     @property
+    def pitch(self):
+        return self.__algaritm_internal.pitch
+    
+    @property
+    def roll(self):
+        return self.__algaritm_internal.roll
+    
+    @property
     def us_1(self):
         return self.__algaritm_internal.ultrasound_1
 
@@ -141,6 +149,12 @@ class RobotAlgaritm(Robot):
     @additional_servo_2.setter
     def additional_servo_2(self, value):
         self.__algaritm_internal.additional_servo_2 = value
+
+    def set_pid_settings(self, use_pid, p, i, d):
+        self.__algaritm_internal.use_pid = use_pid
+        self.__algaritm_internal.p_pid = p
+        self.__algaritm_internal.i_pid = i
+        self.__algaritm_internal.d_pid = d
 
     # num 1 or 2
     def step_motor_move(self, num, steps: int, steps_per_second: int, direction: bool):

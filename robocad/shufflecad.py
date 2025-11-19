@@ -81,7 +81,7 @@ class ShuffleVariable(object):
 
     def set_radar(self, value: list) -> None:
         complete_list = list()
-        for i in range(0, 360):
+        for i in range(len(value)):
             complete_list.append(i)
             complete_list.append(value[i])
         self.value = "+".join(map(str, complete_list))

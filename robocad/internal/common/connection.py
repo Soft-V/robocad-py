@@ -30,7 +30,13 @@ class ListenPort:
         except ConnectionRefusedError:
             self.__robot.write_log("LP: Failed to connect on port " + str(self.__port))
             print("LP: Failed to connect on port " + str(self.__port))
-        self.__robot.write_log("connected: " + str(self.__port))
+            try:
+                self.__sct.shutdown(socket.SHUT_RDWR)
+                self.__sct.close()
+            except (OSError, Exception): pass  # idc
+            return
+
+        self.__robot.write_log("LP: Connected: " + str(self.__port))
         while not self.__stop_thread:
             try:
                 dt = "Wait for data".encode('utf-16-le')
@@ -49,7 +55,7 @@ class ListenPort:
             except (ConnectionAbortedError, BrokenPipeError, OSError):
                 # возникает при отключении сокета
                 break
-        self.__robot.write_log("disconnected: " + str(self.__port))
+        self.__robot.write_log("LP: Disconnected: " + str(self.__port))
         try:
             self.__sct.shutdown(socket.SHUT_RDWR)
             self.__sct.close()
@@ -105,7 +111,13 @@ class TalkPort:
         except ConnectionRefusedError:
             self.__robot.write_log("TP: Failed to connect on port " + str(self.__port))
             print("TP: Failed to connect on port " + str(self.__port))
-        self.__robot.write_log("connected: " + str(self.__port))
+            try:
+                self.__sct.shutdown(socket.SHUT_RDWR)
+                self.__sct.close()
+            except (OSError, Exception): pass  # idc
+            return
+        
+        self.__robot.write_log("TP: Connected: " + str(self.__port))
         while not self.__stop_thread:
             try:
                 dt_ln = struct.pack('<I', len(self.out_bytes))
@@ -118,7 +130,7 @@ class TalkPort:
             except (ConnectionAbortedError, BrokenPipeError, OSError):
                 # возникает при отключении сокета
                 break
-        self.__robot.write_log("disconnected: " + str(self.__port))
+        self.__robot.write_log("LP: Disconnected: " + str(self.__port))
         try:
             self.__sct.shutdown(socket.SHUT_RDWR)
             self.__sct.close()

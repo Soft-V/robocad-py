@@ -47,7 +47,7 @@ class AlgaritmInternal:
         self.step_motor_2_steps_per_s: int = 0
         self.step_motor_1_direction: bool = False
         self.step_motor_2_direction: bool = False
-        self.use_pid: bool = True
+        self.use_pid: bool = False
         self.p_pid: float = 0.14
         self.i_pid: float = 0.1
         self.d_pid: float = 0.0
@@ -210,10 +210,10 @@ class TitanCOM:
         tx_data[4] = int(numpy.clip(self.__robot_internal.speed_motor_3, -100, 100)).to_bytes(1, 'big', signed = True)[0]
 
         # for ProgramIsRunning and directions
-        tx_data[5] = int('1' + ("1") +
-                               ("1" if self.__robot_internal.step_motor_1_direction else "0") +
-                               ("1" if self.__robot_internal.step_motor_2_direction else "0") + 
-                               ("1" if self.__robot_internal.use_pid else "0") + '001', 2)
+        tx_data[5] = int('11' +
+                        ("1" if self.__robot_internal.step_motor_1_direction else "0") +
+                        ("1" if self.__robot_internal.step_motor_2_direction else "0") + 
+                        ("1" if self.__robot_internal.use_pid else "0") + '001', 2)
         
         tx_data[6] = int(self.__robot_internal.additional_servo_1)
         tx_data[7] = int(self.__robot_internal.additional_servo_2)
@@ -354,6 +354,9 @@ class VMXSPI:
             new_roll = (roll_ui / 100) * (1 if Funcad.access_bit(data[7], 3) else -1)
             self.__robot_internal.roll_unlim += self.calc_angle_unlim(new_roll, self.__robot_internal.roll)
             self.__robot_internal.roll = new_roll
+
+            power: float = ((data[8] & 0xff) << 8 | (data[7] & 0xff)) / 100
+            self.__robot.power = power
 
     def set_up_tx_data(self) -> bytearray:
         tx_list: bytearray = bytearray([0x00] * 16)
