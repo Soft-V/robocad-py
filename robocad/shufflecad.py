@@ -14,6 +14,10 @@ from .internal.common.robot import Robot
 
 
 class Shufflecad:
+    LOG_INFO: str = "info"
+    LOG_WARNING: str = "warning"
+    LOG_ERROR: str = "error"
+
     def __init__(self, robot: Robot):
         self.__robot = robot
         self.variables_array: List[ShuffleVariable] = list()
@@ -43,8 +47,8 @@ class Shufflecad:
         raise SystemExit("Exited")
     
     # outcad methods
-    def print_to_log(self, var: str, color: str = "#сссссс") -> None:
-        self.print_array.append(var + color)
+    def print_to_log(self, message: str, message_type: str = LOG_INFO, color: str = "#сссссс") -> None:
+        self.print_array.append(message_type + "@" + message + color)
 
     def get_print_array(self) -> List[str]:
         return self.print_array
