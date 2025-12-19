@@ -4,6 +4,7 @@ import numpy as np
 import signal
 import io
 import struct
+import threading
 from threading import Thread
 import socket
 import time
@@ -25,8 +26,9 @@ class Shufflecad:
         self.joystick_values: dict = dict()
         self.print_array: List[str] = list()
 
-        signal.signal(signal.SIGTERM, self.__handler)
-        signal.signal(signal.SIGINT, self.__handler)
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGTERM, self.__handler)
+            signal.signal(signal.SIGINT, self.__handler)
 
         self.__connection_helper = ConnectionHelper(self, self.__robot)
 

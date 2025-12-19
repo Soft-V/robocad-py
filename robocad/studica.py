@@ -1,4 +1,5 @@
 import signal
+import threading
 
 from .internal.common.robot import Robot
 from .internal.common.robot_configuration import DefaultStudicaConfiguration
@@ -12,8 +13,9 @@ class RobotVmxTitan(Robot):
         super().__init__(is_real_robot, conf)
         self.__studica_internal = StudicaInternal(self, conf)
 
-        signal.signal(signal.SIGTERM, self.handler)
-        signal.signal(signal.SIGINT, self.handler)
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGTERM, self.handler)
+            signal.signal(signal.SIGINT, self.handler)
 
     def stop(self):
         self.__studica_internal.stop()

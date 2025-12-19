@@ -1,4 +1,5 @@
 import signal
+import threading
 
 from .internal.common.robot import Robot
 from .internal.common.robot_configuration import DefaultAlgaritmConfiguration
@@ -13,8 +14,9 @@ class RobotAlgaritm(Robot):
         self.__algaritm_internal = AlgaritmInternal(self, conf)
         self.__reseted_yaw_val = 0.0
 
-        signal.signal(signal.SIGTERM, self.handler)
-        signal.signal(signal.SIGINT, self.handler)
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGTERM, self.handler)
+            signal.signal(signal.SIGINT, self.handler)
 
     def stop(self):
         self.__algaritm_internal.stop()
