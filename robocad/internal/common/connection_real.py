@@ -33,7 +33,7 @@ class ConnectionReal(ConnectionBase):
 
         # pi-blaster
         if conf.with_pi_blaster:
-            subprocess.run(['sudo', '/home/pi/pi-blaster/pi-blaster'])
+            subprocess.run(['sudo', '/home/pi/pi-blaster/pi-blaster', '--pcm'])
         # robot info thread
         self.__robot_info_thread: Thread = Thread(target=self.__updater.updater)
         self.__robot_info_thread.daemon = True
