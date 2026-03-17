@@ -13,7 +13,7 @@ classifiers = [
 
 setup(
     name='robocad-py',
-    version='1.3.7.0',
+    version='1.3.8.0',
     description='python lib for real and virtual robots',
     long_description="Python library for real and virtual robots" + '\n\n' + open('CHANGELOG.md').read(),
     url='https://github.com/Soft-V/robocad-py',
