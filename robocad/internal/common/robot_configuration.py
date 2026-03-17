@@ -32,3 +32,7 @@ class DefaultAlgaritmConfiguration(RobotConfiguration):
         self.vmx_ch = 0
         self.vmx_speed = 1000000
         self.vmx_mode = 0
+
+class DefaultCommonConfiguration(RobotConfiguration):
+    def __init__(self):
+        super().__init__()
