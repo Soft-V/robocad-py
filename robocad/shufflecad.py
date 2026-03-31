@@ -163,7 +163,10 @@ class ConnectionHelper:
             string_vars = self.in_variables_channel.out_string.split("&")
             for i in string_vars:
                 name, value = i.split(";")
-                curr_var = [x for x in self.__shufflecad.variables_array if x.name == name][0]
+                found_by_name = [x for x in self.__shufflecad.variables_array if x.name == name]
+                if len(found_by_name) == 0:
+                    continue
+                curr_var = found_by_name[0]
                 curr_var.value = value
 
     def on_chart_vars(self):
