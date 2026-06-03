@@ -137,6 +137,14 @@ class RobotAlgaritm(Robot):
         return self.__algaritm_internal.analog_8
     
     @property
+    def outputs(self):
+        return self.__algaritm_internal.outputs
+    
+    @property
+    def inputs(self):
+        return self.__algaritm_internal.inputs
+    
+    @property
     def additional_servo_1(self):
         return self.__algaritm_internal.additional_servo_1
 

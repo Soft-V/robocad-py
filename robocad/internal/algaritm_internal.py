@@ -71,6 +71,8 @@ class AlgaritmInternal:
         self.analog_6: int = 0
         self.analog_7: int = 0
         self.analog_8: int = 0
+        self.inputs: list = [False] * 4
+        self.outputs: list = [False] * 4
 
         self.servo_angles: list = [0.0] * 8
 
@@ -186,14 +188,14 @@ class TitanCOM:
                 self.__robot_internal.enc_motor_2 = ((data[12] & 0xff) << 24) | ((data[11] & 0xff) << 16) | ((data[10] & 0xff) << 8) | (data[9] & 0xff)
                 self.__robot_internal.enc_motor_3 = ((data[16] & 0xff) << 24) | ((data[15] & 0xff) << 16) | ((data[14] & 0xff) << 8) | (data[13] & 0xff)
 
-                self.__robot_internal.limit_l_0 = Funcad.access_bit(data[17], 0)
-                self.__robot_internal.limit_h_0 = Funcad.access_bit(data[17], 1)
-                self.__robot_internal.limit_l_1 = Funcad.access_bit(data[17], 2)
-                self.__robot_internal.limit_h_1 = Funcad.access_bit(data[17], 3)
-                self.__robot_internal.limit_l_2 = Funcad.access_bit(data[17], 4)
-                self.__robot_internal.limit_h_2 = Funcad.access_bit(data[17], 5)
-                self.__robot_internal.limit_l_3 = Funcad.access_bit(data[17], 6)
-                self.__robot_internal.limit_h_3 = Funcad.access_bit(data[17], 7)
+                self.__robot_internal.limit_l_0 = Funcad.access_bit(data[17], 7)
+                self.__robot_internal.limit_h_0 = Funcad.access_bit(data[17], 6)
+                self.__robot_internal.limit_l_1 = Funcad.access_bit(data[17], 5)
+                self.__robot_internal.limit_h_1 = Funcad.access_bit(data[17], 4)
+                self.__robot_internal.limit_l_2 = Funcad.access_bit(data[17], 3)
+                self.__robot_internal.limit_h_2 = Funcad.access_bit(data[17], 2)
+                self.__robot_internal.limit_l_3 = Funcad.access_bit(data[17], 1)
+                self.__robot_internal.limit_h_3 = Funcad.access_bit(data[17], 0)
 
                 self.__robot_internal.is_step_1_busy = (data[18] != 0)
                 self.__robot_internal.is_step_2_busy = (data[19] != 0)
@@ -339,6 +341,11 @@ class VMXSPI:
             self.__robot_internal.ultrasound_3 = us3_ui / 100
             us4_ui: int = (data[10] & 0xff) << 8 | (data[9] & 0xff)
             self.__robot_internal.ultrasound_4 = us4_ui / 100
+
+            self.__robot_internal.inputs[0] = Funcad.access_bit(data[11], 0) == 1
+            self.__robot_internal.inputs[1] = Funcad.access_bit(data[11], 1) == 1
+            self.__robot_internal.inputs[2] = Funcad.access_bit(data[11], 2) == 1
+            self.__robot_internal.inputs[3] = Funcad.access_bit(data[11], 3) == 1
         elif data[0] == 3:
             yaw_ui: int = (data[2] & 0xff) << 8 | (data[1] & 0xff)
             new_yaw = (yaw_ui / 100) * (1 if Funcad.access_bit(data[7], 1) else -1)
@@ -355,7 +362,7 @@ class VMXSPI:
             self.__robot_internal.roll_unlim += self.calc_angle_unlim(new_roll, self.__robot_internal.roll)
             self.__robot_internal.roll = new_roll
 
-            power: float = ((data[8] & 0xff) << 8 | (data[7] & 0xff)) / 100
+            power: float = ((data[9] & 0xff) << 8 | (data[8] & 0xff)) / 100
             self.__robot.power = power
 
     def set_up_tx_data(self) -> bytearray:
@@ -372,6 +379,11 @@ class VMXSPI:
             tx_list[6] = int(self.__robot_internal.servo_angles[5])
             tx_list[7] = int(self.__robot_internal.servo_angles[6])
             tx_list[8] = int(self.__robot_internal.servo_angles[7])
+
+            tx_list[9] = int('1' + ("1" if self.__robot_internal.outputs[0] else "0") +
+                                   ("1" if self.__robot_internal.outputs[1] else "0") +
+                                   ("1" if self.__robot_internal.outputs[2] else "0") +
+                                   ("1" if self.__robot_internal.outputs[3] else "0") + '001', 2)
         return tx_list
 
     def calc_angle_unlim(self, new_angle: float, old_angle: float) -> float:
