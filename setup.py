@@ -23,5 +23,5 @@ setup(
     classifiers=classifiers,
     keywords=['simulator', 'robotics', 'robot', '3d', 'raspberry', 'control', 'robocad'],
     packages=find_packages(),
-    install_requires=['numpy', 'funcad', 'pyserial']
+    install_requires=['numpy', 'funcad', 'pyserial', 'psutil']
 )
