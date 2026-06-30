@@ -23,7 +23,7 @@ class DefaultStudicaConfiguration(RobotConfiguration):
 class DefaultAlgaritmConfiguration(RobotConfiguration):
     def __init__(self):
         super().__init__()
-        self.camera_index = 2
+        self.camera_index = 0
         self.with_pi_blaster = False
 
         self.titan_port = '/dev/ttyACM0'
