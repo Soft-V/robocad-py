@@ -49,7 +49,7 @@ class Shufflecad:
         raise SystemExit("Exited")
     
     # outcad methods
-    def print_to_log(self, message: str, message_type: str = LOG_INFO, color: str = "#сссссс") -> None:
+    def print_to_log(self, message: str, message_type: str = LOG_INFO, color: str = "#808080") -> None:
         self.print_array.append(message_type + "@" + message + color)
 
     def get_print_array(self) -> List[str]:
