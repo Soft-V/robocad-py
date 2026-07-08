@@ -213,13 +213,7 @@ class CommonRobot(Robot):
 
     @property
     def camera_image(self):
-        img = self.__common_internal.get_camera()
-        if img is None:
-            return None
-        
-        rotated = cv2.rotate(img, cv2.ROTATE_180)
-        flipped = cv2.flip(rotated, 1)
-        return flipped
+        return self.__algaritm_internal.get_camera()
 
     # port is from 1 to 10 included
     def set_angle_servo(self, value: float, port: int):
