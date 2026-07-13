@@ -36,7 +36,9 @@ class ConnectionSim(ConnectionBase):
             if nparr.size > 0:
                 img_rgb = nparr.reshape(480, 640, 3)
                 img_bgr = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
-                return img_bgr
+                rotated = cv2.rotate(img_bgr, cv2.ROTATE_180)
+                flipped = cv2.flip(rotated, 1)
+                return flipped
         return None
     
     def get_lidar(self):
