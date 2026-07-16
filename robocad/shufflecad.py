@@ -23,7 +23,7 @@ class Shufflecad:
         self.__robot = robot
         self.variables_array: List[ShuffleVariable] = list()
         self.camera_variables_array: List[CameraVariable] = list()
-        self.joystick_values: dict = dict()
+        self.joystick_data: JoystickData = JoystickData()
         self.print_array: List[str] = list()
 
         if threading.current_thread() is threading.main_thread():
@@ -57,6 +57,31 @@ class Shufflecad:
 
     def clear_print_array(self) -> None:
         self.print_array = list()
+
+class JoystickData:
+    def __init__(self):
+        self.btn_a: bool = False
+        self.btn_b: bool = False
+        self.btn_x: bool = False
+        self.btn_y: bool = False
+        
+        self.dpud_up: bool = False
+        self.dpud_down: bool = False
+        self.dpud_left: bool = False
+        self.dpud_right: bool = False
+        
+        self.right_trigger: int = 0
+        self.left_trigger: int = 0
+        
+        self.right_stick_x: int = 0
+        self.right_stick_y: int = 0
+        
+        self.left_stick_x: int = 0
+        self.left_stick_y: int = 0
+        
+        self.right_shoulder: bool = False
+        self.left_shoulder: bool = False
+    
 
 class ShuffleVariable(object):
     FLOAT_TYPE: str = "float"
@@ -228,7 +253,39 @@ class ConnectionHelper:
             string_vars = self.joy_variables_channel.out_string.split("&")
             for i in string_vars:
                 name, value = i.split(";")
-                self.__shufflecad.joystick_values[name] = int(value)
+                int_val = int(value)
+                if (name == "A"):
+                    self.__shufflecad.joystick_data.btn_a = int_val == 1
+                elif (name == "X"):
+                    self.__shufflecad.joystick_data.btn_x = int_val == 1
+                elif (name == "Y"):
+                    self.__shufflecad.joystick_data.btn_y = int_val == 1
+                elif (name == "B"):
+                    self.__shufflecad.joystick_data.btn_b = int_val == 1
+                elif (name == "RightShoulder"):
+                    self.__shufflecad.joystick_data.right_shoulder = int_val == 1
+                elif (name == "LeftShoulder"):
+                    self.__shufflecad.joystick_data.left_shoulder = int_val == 1
+                elif (name == "DPad_Up"):
+                    self.__shufflecad.joystick_data.dpud_up = int_val == 1
+                elif (name == "DPad_Down"):
+                    self.__shufflecad.joystick_data.dpud_down = int_val == 1
+                elif (name == "DPad_Right"):
+                    self.__shufflecad.joystick_data.dpud_right = int_val == 1
+                elif (name == "DPad_Left"):
+                    self.__shufflecad.joystick_data.dpud_left = int_val == 1
+                elif (name == "LeftTrigger"):
+                    self.__shufflecad.joystick_data.left_trigger = int_val
+                elif (name == "RightTrigger"):
+                    self.__shufflecad.joystick_data.right_trigger = int_val
+                elif (name == "LeftThumbstick_X"):
+                    self.__shufflecad.joystick_data.left_stick_x = int_val
+                elif (name == "LeftThumbstick_Y"):
+                    self.__shufflecad.joystick_data.left_stick_y = int_val
+                elif (name == "RightThumbstick_X"):
+                    self.__shufflecad.joystick_data.right_stick_x = int_val
+                elif (name == "RightThumbstick_Y"):
+                    self.__shufflecad.joystick_data.right_stick_y = int_val
 
 class SplitFrames(object):
     def __init__(self, connection):
