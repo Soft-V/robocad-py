@@ -155,7 +155,7 @@ class RobocadConnection:
                       self.__robot_internal.speed_motor_1,
                       self.__robot_internal.speed_motor_2,
                       self.__robot_internal.speed_motor_3]
-            values.extend(self.__robot_internal.servo_angles)
+            values.extend([(0.0011111 * i + 0.05) for i in self.__robot_internal.servo_angles]) # make to range 0.05-0.25
             values.append(self.__robot_internal.additional_servo_1)
             values.append(self.__robot_internal.additional_servo_2)
             values.append(self.__robot_internal.step_motor_1_steps)
