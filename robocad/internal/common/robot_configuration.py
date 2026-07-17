@@ -1,8 +1,14 @@
+class LidarTypes:
+    N10_LIDAR = 0
+    YD_LIDAR_X2 = 1
+
 class RobotConfiguration:
     def __init__(self):
         self.camera_index = 0
         self.lib_holder_first_path = '/home/pi'
         self.with_pi_blaster = True
+
+        self.lidar_type = LidarTypes.N10_LIDAR
         self.lidar_port = '/dev/ttyUSB0'
 
         self.sim_log_path = './robocad.log'

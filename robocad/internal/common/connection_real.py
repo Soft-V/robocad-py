@@ -7,8 +7,9 @@ from .connection_base import ConnectionBase
 from .robot import Robot
 from .shared import LibHolder
 from .updaters import Updater
-from .robot_configuration import RobotConfiguration
-from .lidar import YDLidarX2
+from .robot_configuration import RobotConfiguration, LidarTypes
+from .yd_lidar_x2 import YDLidarX2
+from .n10_lidar import N10Lidar
 
 
 class ConnectionReal(ConnectionBase):
@@ -24,9 +25,11 @@ class ConnectionReal(ConnectionBase):
             self.__robot.write_log(str(e))
 
         try:
-            self.__lidar_instance = YDLidarX2(robot, conf.lidar_port)
-            self.__lidar_instance.connect()
-            self.__lidar_instance.start_scan()
+            if (conf.lidar_type == LidarTypes.YD_LIDAR_X2):
+                self.__lidar_instance = YDLidarX2(robot, conf.lidar_port)
+            elif (conf.lidar_type == LidarTypes.N10_LIDAR):
+                self.__lidar_instance = N10Lidar(robot, conf.lidar_port)
+            self.__lidar_instance.start()
         except Exception as e:
             self.__robot.write_log("Exception while creating lidar instance: ")
             self.__robot.write_log(str(e))
@@ -41,8 +44,7 @@ class ConnectionReal(ConnectionBase):
 
     def stop(self) -> None:
         if self.__lidar_instance is not None:
-            self.__lidar_instance.stop_scan()
-            self.__lidar_instance.disconnect()
+            self.__lidar_instance.stop()
 
         self.__updater.stop_robot_info_thread = True
         self.__robot_info_thread.join()
