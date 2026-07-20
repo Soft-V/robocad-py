@@ -120,6 +120,10 @@ class CameraVariable(object):
             self.value = mat
 
 class ConnectionHelper:
+    # Камеры: список (имя;ширина:высота) идёт по TCP, а кадры — по UDP чанками.
+    CAMERA_UDP_PORT = 63260
+    CAMERA_UDP_CHUNK = 1400
+
     def __init__(self, shufflecad: Shufflecad, robot: Robot):
         self.__shufflecad = shufflecad
         self.__robot = robot
@@ -128,8 +132,15 @@ class ConnectionHelper:
         self.chart_variables_channel: TalkPort = TalkPort(self.__robot, 63255, self.on_chart_vars, 0.002)
         self.outcad_variables_channel: TalkPort = TalkPort(self.__robot, 63257, self.on_outcad_vars, 0.1)
         self.rpi_variables_channel: TalkPort = TalkPort(self.__robot, 63256, self.on_rpi_vars, 0.5)
-        self.camera_variables_channel: TalkPort = TalkPort(self.__robot, 63254, self.on_camera_vars, 0.03, True)
+        # Камера-канал теперь отдаёт только метаданные (список камер), без картинок.
+        self.camera_variables_channel: TalkPort = TalkPort(self.__robot, 63254, self.on_camera_vars, 0.03)
         self.joy_variables_channel: ListenPort = ListenPort(self.__robot, 63259, self.on_joy_vars, 0.004)
+
+        self.__selected_camera = 0
+        self.__stop_camera_udp = False
+        self.__camera_udp_sock = None
+        self.__camera_udp_thread = None
+
         self.start()
 
     def start(self):
@@ -140,6 +151,7 @@ class ConnectionHelper:
         self.rpi_variables_channel.start_talking()
         self.camera_variables_channel.start_talking()
         self.joy_variables_channel.start_listening()
+        self.start_camera_udp()
 
     def stop(self):
         self.out_variables_channel.stop_talking()
@@ -149,6 +161,7 @@ class ConnectionHelper:
         self.rpi_variables_channel.stop_talking()
         self.camera_variables_channel.stop_talking()
         self.joy_variables_channel.stop_listening()
+        self.stop_camera_udp()
 
     def on_out_vars(self):
         without_charts = [i for i in self.__shufflecad.variables_array if i.type_ != ShuffleVariable.CHART_TYPE]
@@ -194,34 +207,70 @@ class ConnectionHelper:
                    self.__robot.robot_info.com_count_dev]
         self.rpi_variables_channel.out_string = "&".join(map(str, out_lst))
 
-    __camera_toggler = 0
-
     def on_camera_vars(self):
-        # Logger.write_main_log(str(len(Shared.InfoHolder.camera_variables_array)))
-        if len(self.__shufflecad.camera_variables_array) > 0:
-            if int(self.camera_variables_channel.str_from_client) == -1:
-                curr_var = self.__shufflecad.camera_variables_array[self.__camera_toggler]
-                to_send_first = "{0};{1}".format(curr_var.name, ":".join(map(str, curr_var.shape)))
-                # Logger.write_main_log(to_send_first)
-
-                self.camera_variables_channel.out_string = to_send_first
-                self.camera_variables_channel.out_bytes = curr_var.get_value()
-
-                # Logger.write_main_log("sent")
-
-                if self.__camera_toggler + 1 == len(self.__shufflecad.camera_variables_array):
-                    self.__camera_toggler = 0
-                else:
-                    self.__camera_toggler += 1
-            else:
-                curr_var = self.__shufflecad.camera_variables_array[int(self.camera_variables_channel.str_from_client)]
-                to_send_first = "{0};{1}".format(curr_var.name, ":".join(map(str, curr_var.shape)))
-
-                self.camera_variables_channel.out_string = to_send_first
-                self.camera_variables_channel.out_bytes = curr_var.get_value()
+        # Отдаём весь список камер каждый цикл — клиент всегда видит актуальный набор.
+        cams = self.__shufflecad.camera_variables_array
+        if len(cams) > 0:
+            segs = ["{0};{1}".format(c.name, ":".join(map(str, c.shape))) for c in cams]
+            self.camera_variables_channel.out_string = "&".join(segs)
         else:
             self.camera_variables_channel.out_string = "null"
-            self.camera_variables_channel.out_bytes = b'null'
+
+        # Клиент присылает индекс выбранной камеры — её кадры уходят по UDP.
+        try:
+            self.__selected_camera = int(self.camera_variables_channel.str_from_client)
+        except (ValueError, TypeError):
+            pass
+
+    def start_camera_udp(self):
+        self.__stop_camera_udp = False
+        self.__camera_udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.__camera_udp_thread = Thread(target=self.camera_udp_loop, args=(), daemon=True)
+        self.__camera_udp_thread.start()
+
+    def stop_camera_udp(self):
+        self.__stop_camera_udp = True
+        if self.__camera_udp_sock is not None:
+            try:
+                self.__camera_udp_sock.close()
+            except (OSError, Exception):
+                pass
+
+    def camera_udp_loop(self):
+        # Кадр выбранной камеры режем на чанки и шлём по UDP: заголовок
+        # (frameId:u32, cameraIndex:u16, chunkIndex:u16, chunkCount:u16) + данные.
+        frame_id = 0
+        while not self.__stop_camera_udp:
+            try:
+                target = self.camera_variables_channel.client_address
+                cams = self.__shufflecad.camera_variables_array
+                if target is not None and len(cams) > 0:
+                    idx = self.__selected_camera
+                    if idx < 0 or idx >= len(cams):
+                        idx = 0
+                    cam = cams[idx]
+                    if cam.shape[0] > 0 and cam.shape[1] > 0:
+                        data = cam.get_value().tobytes()
+                        # get_value возвращает JPEG (начинается с FF D8)
+                        if len(data) >= 2 and data[0] == 0xFF and data[1] == 0xD8:
+                            self.send_frame_udp(target, idx, data, frame_id)
+                            frame_id = (frame_id + 1) & 0xFFFFFFFF
+            except (OSError, Exception):
+                pass
+            time.sleep(0.03)
+
+    def send_frame_udp(self, target: str, camera_index: int, data: bytes, frame_id: int):
+        total = (len(data) + self.CAMERA_UDP_CHUNK - 1) // self.CAMERA_UDP_CHUNK
+        if total < 1:
+            total = 1
+        for i in range(total):
+            off = i * self.CAMERA_UDP_CHUNK
+            chunk = data[off:off + self.CAMERA_UDP_CHUNK]
+            header = struct.pack('<IHHH', frame_id, camera_index, i, total)
+            try:
+                self.__camera_udp_sock.sendto(header + chunk, (target, self.CAMERA_UDP_PORT))
+            except (OSError, Exception):
+                pass
 
     def on_joy_vars(self):
         if len(self.joy_variables_channel.out_string) > 0 and self.joy_variables_channel.out_string != "null":
@@ -370,6 +419,9 @@ class TalkPort:
 
         self.str_from_client = '-1'
 
+        # IP клиента (shufflecad) — нужен, чтобы слать кадры камеры по UDP
+        self.client_address = None
+
         self.__sct = None
         self.__thread = None
 
@@ -393,7 +445,9 @@ class TalkPort:
         self.__sct.listen(1)
 
         try:
-            connection_out = self.__sct.accept()[0].makefile('rwb')
+            conn, addr = self.__sct.accept()
+            self.client_address = addr[0]
+            connection_out = conn.makefile('rwb')
         except OSError:
             self.__robot.write_log("Shufflecad TP: Failed to connect on port " + str(self.__port))
             return
