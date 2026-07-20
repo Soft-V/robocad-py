@@ -13,6 +13,7 @@ class CommonRobot(Robot):
 
         super().__init__(is_real_robot, conf)
         self.__common_internal = CommonRobotInternal(self, conf)
+        self.__reseted_yaw_val = 0.0
 
         if threading.current_thread() is threading.main_thread():
             signal.signal(signal.SIGTERM, self.handler)
@@ -126,7 +127,10 @@ class CommonRobot(Robot):
     
     @property
     def yaw(self):
-        return self.__common_internal.yaw
+        return self.__rerange_angle_180(self.__common_internal.yaw - self.__reseted_yaw_val)
+    
+    def reset_yaw(self):
+        self.__reseted_yaw_val = self.yaw
 
     @property
     def us_1(self):
@@ -222,3 +226,10 @@ class CommonRobot(Robot):
     # port is from 1 to 10 included
     def set_pwm_servo(self, value: float, port: int):
         self.__common_internal.set_servo_pwm(value, port - 1)
+
+    def __rerange_angle_180(self, angle: float):
+        while angle > 180:
+            angle -= 360
+        while angle < -180:
+            angle += 360
+        return angle

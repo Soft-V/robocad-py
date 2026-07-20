@@ -1,5 +1,6 @@
 from serial import Serial
 from typing import Callable
+import threading
 
 from .robot import Robot
 from .lidar import LidarBase
@@ -23,7 +24,7 @@ class N10Lidar(LidarBase):
             pass
         return self.serial.read(self.serial.in_waiting)
     
-    def scan(self, update: Callable):
+    def _scan(self):
         data = []
         while not self._shutdown:
             [data.append(i) for i in self.get_raw()]
@@ -63,7 +64,7 @@ class N10Lidar(LidarBase):
                 
                 data = data[N10Lidar.MIN_PAYLOAD:]
 
-                update(final_data)
+                self.__handle_data(final_data)
     
     def __handle_data(self, data):
         for i in data:
@@ -73,7 +74,8 @@ class N10Lidar(LidarBase):
         self.shutdown()
         
     def start(self):
-        self.scan(self.__handle_data)
+        self._scan_thread = threading.Thread(target = self._scan)
+        self._scan_thread.start()
 
     def get_data(self):
         return self._data

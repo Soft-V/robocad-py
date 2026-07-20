@@ -13,6 +13,8 @@ class RobotAlgaritm(Robot):
         super().__init__(is_real_robot, conf)
         self.__algaritm_internal = AlgaritmInternal(self, conf)
         self.__reseted_yaw_val = 0.0
+        self.__reseted_pitch_val = 0.0
+        self.__reseted_roll_val = 0.0
 
         if threading.current_thread() is threading.main_thread():
             signal.signal(signal.SIGTERM, self.handler)
@@ -78,16 +80,25 @@ class RobotAlgaritm(Robot):
     
     @property
     def yaw(self):
-        return self.__algaritm_internal.yaw
+        return self.__rerange_angle_360(self.__algaritm_internal.yaw - self.__reseted_yaw_val)
+    
+    def reset_yaw(self):
+        self.__reseted_yaw_val = self.yaw
     
     @property
     def pitch(self):
-        return self.__algaritm_internal.pitch
-    
+        return self.__rerange_angle_360(self.__algaritm_internal.pitch - self.__reseted_pitch_val)
+
+    def reset_pitch(self):
+        self.__reseted_pitch_val = self.pitch
+
     @property
     def roll(self):
-        return self.__algaritm_internal.roll
-    
+        return self.__rerange_angle_360(self.__algaritm_internal.roll - self.__reseted_roll_val)
+
+    def reset_roll(self):
+        self.__reseted_roll_val = self.roll
+
     @property
     def us_1(self):
         return self.__algaritm_internal.ultrasound_1
@@ -196,3 +207,11 @@ class RobotAlgaritm(Robot):
     # port is from 1 to 8 included
     def set_angle_servo(self, value: float, port: int):
         self.__algaritm_internal.set_servo_angle(value, port - 1)
+
+    def __rerange_angle_360(self, angle: float):
+        while angle > 360:
+            angle -= 360
+        while angle < 0:
+            angle += 360
+        return angle
+
