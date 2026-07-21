@@ -37,8 +37,8 @@ class AlgaritmInternal:
         self.limit_h_2: bool = False
         self.limit_l_3: bool = False
         self.limit_h_3: bool = False
-        self.additional_servo_1: float = 0.0
-        self.additional_servo_2: float = 0.0
+        self.additional_servo_1: float = 255.0
+        self.additional_servo_2: float = 255.0
         self.is_step_1_busy: bool = False
         self.is_step_2_busy: bool = False
         self.step_motor_1_steps: int = 0
@@ -74,7 +74,7 @@ class AlgaritmInternal:
         self.inputs: list = [False] * 4
         self.outputs: list = [False] * 4
 
-        self.servo_angles: list = [0.0] * 8
+        self.servo_angles: list = [255.0] * 8
 
         self.__connection: ConnectionBase = None
         if not self.__robot.on_real_robot:
