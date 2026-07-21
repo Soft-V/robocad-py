@@ -118,6 +118,16 @@ class AlgaritmInternal:
             self.step_motor_2_steps = steps
             self.step_motor_2_steps_per_s = steps_per_second
             self.step_motor_2_direction = direction
+    
+    def step_motor_reset(self, num):
+        if num == 1:
+            self.step_motor_1_steps = 0
+            self.step_motor_1_steps_per_s = 0
+            self.step_motor_1_direction = False
+        elif num == 2:
+            self.step_motor_2_steps = 0
+            self.step_motor_2_steps_per_s = 0
+            self.step_motor_2_direction = False
 
 
 class RobocadConnection:
@@ -307,6 +317,11 @@ class TitanCOM:
 
                 self.__robot_internal.is_step_1_busy = (data[18] != 0)
                 self.__robot_internal.is_step_2_busy = (data[19] != 0)
+
+                # reset step motor data when is_busy flag is True
+                # because we need to do step things only once
+                if self.__robot_internal.is_step_1_busy: self.__robot_internal.step_motor_reset(1)
+                if self.__robot_internal.is_step_2_busy: self.__robot_internal.step_motor_reset(2)
         else:
             self.__robot.write_log("received wrong data " + " ".join(map(str, data)))
 
