@@ -13,6 +13,7 @@ from .common.connection_sim import ConnectionSim
 from .common.connection_real import ConnectionReal
 from .common.updaters import RpiUpdater
 from .common.robot_configuration import DefaultStudicaConfiguration
+from .common.pigpio_pwm import PigpioPWM
 
 
 class StudicaInternal:
@@ -20,6 +21,11 @@ class StudicaInternal:
 
     def __init__(self, robot: Robot, conf: DefaultStudicaConfiguration):
         self.__robot = robot
+        self.__pwm = None
+        if robot.on_real_robot:
+            self.__pwm = PigpioPWM(
+                conf.pigpio_pipe_path, conf.pigpio_response_path,
+                conf.hcdio_pwm_frequency, conf.pigpio_timeout)
 
         # from Titan
         self.speed_motor_0: float = 0.0
@@ -77,6 +83,11 @@ class StudicaInternal:
             self.__vmx.start_spi(self.__connection, self.__robot, self, conf)
 
     def stop(self):
+        if self.__pwm is not None:
+            try:
+                self.__pwm.stop()
+            except RuntimeError as exc:
+                self.__robot.write_log(f'Failed to disable HCDIO PWM: {exc}')
         self.__connection.stop()
         if not self.__robot.on_real_robot:
             if self.__robocad_conn is not None:
@@ -92,31 +103,23 @@ class StudicaInternal:
 
     def set_servo_angle(self, angle: float, pin: int):
         dut: float = 0.000666 * angle + 0.05
-        self.hcdio_values[pin] = dut
-        self.echo_to_file(str(self.HCDIO_CONST_ARRAY[pin]) + "=" + str(dut))
+        self.set_servo_pwm(dut, pin)
 
     def set_led_state(self, state: bool, pin: int):
         dut: float = 0.2 if state else 0.0
-        self.hcdio_values[pin] = dut
-        self.echo_to_file(str(self.HCDIO_CONST_ARRAY[pin]) + "=" + str(dut))
+        self.set_servo_pwm(dut, pin)
 
     def set_servo_pwm(self, pwm: float, pin: int):
-        dut: float = pwm
-        self.hcdio_values[pin] = dut
-        self.echo_to_file(str(self.HCDIO_CONST_ARRAY[pin]) + "=" + str(dut))
+        if not isinstance(pin, int) or not 0 <= pin < len(self.HCDIO_CONST_ARRAY):
+            raise ValueError('HCDIO port must be an integer from 1 to 10')
+        if not 0.0 <= pwm <= 1.0:
+            raise ValueError('PWM duty cycle must be between 0 and 1')
+        if self.__pwm is not None:
+            self.__pwm.set_dutycycle(self.HCDIO_CONST_ARRAY[pin], pwm)
+        self.hcdio_values[pin] = pwm
 
     def disable_servo(self, pin: int):
-        self.hcdio_values[pin] = 0.0
-        self.echo_to_file(str(self.HCDIO_CONST_ARRAY[pin]) + "=" + "0.0")
-
-    def echo_to_file(self, st: str):
-        if not self.__robot.on_real_robot:
-            return None
-        original_stdout = sys.stdout
-        with open('/dev/pi-blaster', 'w') as f:
-            sys.stdout = f  # Change the standard output to the file we created.
-            print(st)
-            sys.stdout = original_stdout  # Reset the standard output to its original value
+        self.set_servo_pwm(0.0, pin)
     
 class RobocadConnection:
     def __init__(self):

@@ -131,6 +131,11 @@ class RobotVmxTitan(Robot):
 
     # port is from 1 to 10 included
     def set_pwm_hcdio(self, value: float, port: int):
+        """Set duty cycle from 0 to 1 (0 disables PWM); default frequency is 100 Hz.
+
+        Real hardware requires a running pigpiod with /dev/pigpio and
+        /dev/pigout available. No Python pigpio package is required.
+        """
         self.__studica_internal.set_servo_pwm(value, port - 1)
 
     # port is from 1 to 10 included

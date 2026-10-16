@@ -1,4 +1,3 @@
-import subprocess
 from threading import Thread
 import time
 import cv2
@@ -34,9 +33,6 @@ class ConnectionReal(ConnectionBase):
             self.__robot.write_log("Exception while creating lidar instance: ")
             self.__robot.write_log(str(e))
 
-        # pi-blaster
-        if conf.with_pi_blaster:
-            subprocess.run(['sudo', '/home/pi/pi-blaster/pi-blaster', '--pcm'])
         # robot info thread
         self.__robot_info_thread: Thread = Thread(target=self.__updater.updater)
         self.__robot_info_thread.daemon = True
