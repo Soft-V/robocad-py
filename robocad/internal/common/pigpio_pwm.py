@@ -23,6 +23,7 @@ class PigpioPWM:
         self._pipe_identity = None
         self._configured = set()
         self._used = set()
+        self._stopped = False
         self._lock = RLock()
 
     @staticmethod
@@ -64,6 +65,8 @@ class PigpioPWM:
             raise ValueError('PWM duty cycle must be between 0 and 1')
 
         with self._lock:
+            if self._stopped and duty != 0:
+                raise RuntimeError('PWM controller has been stopped')
             command_fd = response_fd = None
             try:
                 command_fd = self._open_fifo(self.pipe_path, os.O_WRONLY)
@@ -83,6 +86,14 @@ class PigpioPWM:
                     except BlockingIOError:
                         break
 
+                if duty == 0:
+                    # WRITE cancels PWM/servo generation and actively holds the
+                    # signal LOW. Disabling must not depend on PWM configuration.
+                    self._command(command_fd, response_fd, f'W {gpio} 0')
+                    self._configured.discard(gpio)
+                    self._used.discard(gpio)
+                    return
+
                 if gpio not in self._configured:
                     self._command(command_fd, response_fd, f'P {gpio} 0')
                     actual = self._command(command_fd, response_fd,
@@ -98,8 +109,6 @@ class PigpioPWM:
                 self._used.add(gpio)
                 self._command(command_fd, response_fd,
                               f'P {gpio} {round(duty * self.PWM_RANGE)}')
-                if duty == 0:
-                    self._used.discard(gpio)
             except OSError as exc:
                 self._configured.clear()
                 raise RuntimeError(
@@ -114,10 +123,17 @@ class PigpioPWM:
                 if command_fd is not None:
                     os.close(command_fd)
 
-    def stop(self):
+    def stop(self, gpios=None):
+        """Disable the specified outputs, including any left by an earlier program.
+
+        This removes control pulses; whether the servo releases torque without
+        pulses depends on the servo. Nonzero PWM is rejected after stopping.
+        """
         with self._lock:
+            self._stopped = True
             errors = []
-            for gpio in sorted(self._used):
+            targets = self._used.union(gpios if gpios is not None else ())
+            for gpio in sorted(targets):
                 try:
                     self.set_dutycycle(gpio, 0)
                 except RuntimeError as exc:

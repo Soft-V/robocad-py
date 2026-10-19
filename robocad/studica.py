@@ -19,6 +19,11 @@ class RobotVmxTitan(Robot):
             signal.signal(signal.SIGINT, self.handler)
 
     def stop(self):
+        """Stop the robot and drive all HCDIO signals LOW, cancelling servo pulses.
+
+        Reports failures and prevents subsequent nonzero HCDIO commands. A
+        servo's response to losing control pulses depends on its electronics.
+        """
         self.__studica_internal.stop()
         self.write_log("Program stopped")
 

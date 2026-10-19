@@ -2,7 +2,7 @@ import struct
 import sys
 import os
 import time
-from threading import Thread
+from threading import RLock, Thread
 
 from funcad.funcad import Funcad
 
@@ -21,6 +21,8 @@ class StudicaInternal:
 
     def __init__(self, robot: Robot, conf: DefaultStudicaConfiguration):
         self.__robot = robot
+        self.__hcdio_lock = RLock()
+        self.__stopped = False
         self.__pwm = None
         if robot.on_real_robot:
             self.__pwm = PigpioPWM(
@@ -83,20 +85,33 @@ class StudicaInternal:
             self.__vmx.start_spi(self.__connection, self.__robot, self, conf)
 
     def stop(self):
+        with self.__hcdio_lock:
+            self.__stopped = True
+            self.hcdio_values[:] = [0.0] * len(self.HCDIO_CONST_ARRAY)
+
+        # Try every cleanup even if one device fails. Do not report a successful
+        # stop when pigpiod did not acknowledge disabling the servo signals.
+        errors = []
         if self.__pwm is not None:
             try:
-                self.__pwm.stop()
+                self.__pwm.stop(self.HCDIO_CONST_ARRAY)
             except RuntimeError as exc:
                 self.__robot.write_log(f'Failed to disable HCDIO PWM: {exc}')
-        self.__connection.stop()
+                errors.append(exc)
+
+        resources = [self.__connection]
         if not self.__robot.on_real_robot:
-            if self.__robocad_conn is not None:
-                self.__robocad_conn.stop()
+            resources.append(self.__robocad_conn)
         else:
-            if self.__titan is not None:
-                self.__titan.stop()
-            if self.__vmx is not None:
-                self.__vmx.stop()
+            resources.extend([self.__titan, self.__vmx])
+        for resource in resources:
+            if resource is not None:
+                try:
+                    resource.stop()
+                except Exception as exc:
+                    errors.append(exc)
+        if errors:
+            raise RuntimeError('Robot stop failed: ' + '; '.join(map(str, errors))) from errors[0]
 
     def get_camera(self):
         return self.__connection.get_camera()
@@ -114,9 +129,12 @@ class StudicaInternal:
             raise ValueError('HCDIO port must be an integer from 1 to 10')
         if not 0.0 <= pwm <= 1.0:
             raise ValueError('PWM duty cycle must be between 0 and 1')
-        if self.__pwm is not None:
-            self.__pwm.set_dutycycle(self.HCDIO_CONST_ARRAY[pin], pwm)
-        self.hcdio_values[pin] = pwm
+        with self.__hcdio_lock:
+            if self.__stopped and pwm != 0:
+                raise RuntimeError('Robot has been stopped; HCDIO PWM cannot be enabled')
+            if self.__pwm is not None:
+                self.__pwm.set_dutycycle(self.HCDIO_CONST_ARRAY[pin], pwm)
+            self.hcdio_values[pin] = pwm
 
     def disable_servo(self, pin: int):
         self.set_servo_pwm(0.0, pin)
