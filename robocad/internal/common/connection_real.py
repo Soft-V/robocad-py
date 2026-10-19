@@ -17,6 +17,8 @@ class ConnectionReal(ConnectionBase):
         self.__updater = updater
         self.__lib = LibHolder(conf.lib_holder_first_path)
 
+        self.__lidar_instance = None
+        self.__camera_instance = None
         try:
             self.__camera_instance = cv2.VideoCapture(conf.camera_index)
         except Exception as e:
@@ -41,6 +43,8 @@ class ConnectionReal(ConnectionBase):
     def stop(self) -> None:
         if self.__lidar_instance is not None:
             self.__lidar_instance.stop()
+        if self.__camera_instance is not None:
+            self.__camera_instance.release()
 
         self.__updater.stop_robot_info_thread = True
         self.__robot_info_thread.join()
