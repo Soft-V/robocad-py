@@ -94,6 +94,11 @@ class PigpioPWM:
                     self._used.discard(gpio)
                     return
 
+                # A restarted daemon can reuse the same FIFO inode.
+                if gpio in self._configured and (
+                        self._command(command_fd, response_fd, f'PFG {gpio}') != self.frequency or
+                        self._command(command_fd, response_fd, f'PRG {gpio}') != self.PWM_RANGE):
+                    self._configured.discard(gpio)
                 if gpio not in self._configured:
                     self._command(command_fd, response_fd, f'P {gpio} 0')
                     actual = self._command(command_fd, response_fd,
